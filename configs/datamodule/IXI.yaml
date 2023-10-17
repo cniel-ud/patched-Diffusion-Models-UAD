@@ -1,10 +1,9 @@
-_target_: src.datamodules.Datamodules_train.IXI
+_target_: src.datamodules.IXI
 
 cfg:
   name: IXI
   path:
     pathBase: ${data_dir}
-
     IXI:
       IDs: 
         train: 
@@ -69,6 +68,6 @@ cfg:
   testsets: # specify which test sets to evaluate!
   - Datamodules_eval.Brats21
   - Datamodules_eval.MSLUB
-  - Datamodules_train.IXI
+  - IXI
 
 

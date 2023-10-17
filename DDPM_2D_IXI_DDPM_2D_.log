@@ -1,0 +1,8 @@
+[2023-10-16 10:56:29,357][src.train][INFO] - Seed specified to 3141 by config
+[2023-10-16 10:56:29,358][lightning_fabric.utilities.seed][INFO] - Seed set to 3141
+[2023-10-16 10:56:29,361][src.train][INFO] - Training Fold 1 of 1 in the WandB group DDPM_2D
+[2023-10-16 10:56:29,361][src.train][INFO] - Instantiating datamodule <src.datamodules.Datamodules_train.IXI>
+[2023-10-16 10:59:52,512][src.train][INFO] - Seed specified to 3141 by config
+[2023-10-16 10:59:52,513][lightning_fabric.utilities.seed][INFO] - Seed set to 3141
+[2023-10-16 10:59:52,515][src.train][INFO] - Training Fold 1 of 1 in the WandB group DDPM_2D
+[2023-10-16 10:59:52,515][src.train][INFO] - Instantiating datamodule <src.datamodules.Datamodules_train.IXI>

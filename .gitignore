@@ -16,3 +16,6 @@ wandb/
 # pc_environment.env
 outputlog*
 errorlog*
+IXI-T1
+.idea
+*.pyc
