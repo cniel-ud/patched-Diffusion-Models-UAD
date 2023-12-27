@@ -1,3 +1,4 @@
+from pytorch_lightning import LightningModule
 
 from src.models.modules.cond_DDPM import GaussianDiffusion
 from src.models.modules.OpenAI_Unet import UNetModel as OpenAI_UNet
@@ -5,7 +6,6 @@ from src.models.modules.OpenAI_Unet import UNetModel as OpenAI_UNet
 import torch
 from src.utils.utils_eval import _test_step, _test_end, get_eval_dictionary
 import numpy as np
-from pytorch_lightning.core.lightning import LightningModule
 import torch.optim as optim
 from typing import Any, List
 import torchio as tio
