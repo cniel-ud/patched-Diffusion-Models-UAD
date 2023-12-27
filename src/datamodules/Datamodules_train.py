@@ -90,10 +90,10 @@ class Brats(LightningDataModule):
             if self.cfg.sample_set:  # for debugging
                 raise NotImplementedError("this is not implemented yet.")
             else:
-                self.train = create_dataset.TrainBrats(self.brats_images_train)
-                self.val = create_dataset.TrainBrats(self.brats_images_val)
-                self.val_eval = create_dataset.EvalBrats(self.brats_images_test_val)
-                self.test_eval = create_dataset.EvalBrats(self.brats_images_test_test)
+                self.train = create_dataset.TrainBrats(self.brats_images_train, self.cfg)
+                self.val = create_dataset.TrainBrats(self.brats_images_val, self.cfg)
+                self.val_eval = create_dataset.EvalBrats(self.brats_images_test_val, self.cfg)
+                self.test_eval = create_dataset.EvalBrats(self.brats_images_test_test, self.cfg)
 
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.cfg.batch_size, num_workers=self.cfg.num_workers, pin_memory=True,

@@ -252,7 +252,7 @@ def exclude_abnomral_slices(image, mask, slice_dim=-1):
     return torch.stack(no_abnormal_image)
 
 
-def TrainBrats(self, images_path: str, cfg):
+def TrainBrats(images_path: str, cfg):
     # Assuming images and masks have the same naming convention and are in the same order
 
     # Get a list of image files
