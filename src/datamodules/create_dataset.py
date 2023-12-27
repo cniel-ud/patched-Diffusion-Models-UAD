@@ -245,7 +245,7 @@ def exclude_abnomral_slices(image, mask, slice_dim=-1):
     no_abnormal_image = []
     if slice_dim == -1:
         for i in range(len(image.shape[:-1])):
-            if (mask[..., i]>0).mean() < .1:
+            if (mask[..., i]>0).float().mean() < .1:
                 no_abnormal_image.append(image[..., i])
     else:
         raise NotImplementedError(f'slice_dim = {slice_dim} is not supported')
