@@ -266,8 +266,8 @@ def TrainBrats(images_path: str, cfg):
         mask = tio.LabelMap(os.path.join(images_path, mask_file))
 
         # Call the preprocessing method
-        image = exclude_abnomral_slices(image.data[0], mask.data[0])
-        image, mask = exclude_empty_slices(image.data[0], mask.data[0])
+        image = exclude_abnomral_slices(image.data[0].float(), mask.data[0].float())
+        image, mask = exclude_empty_slices(image.data[0].float(), mask.data[0].float())
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'age': None, 'ID': img_file, 'label': None,
                         'Dataset': None, 'stage': 'train', 'path': img_file, 'mask': tio.LabelMap(tensor=image > .001)}
         subject = tio.Subject(subject_dict)
@@ -290,7 +290,7 @@ def EvalBrats(images_path: str, cfg):
         image = tio.ScalarImage(os.path.join(images_path, img_file))
         mask = tio.LabelMap(os.path.join(images_path, mask_file))
 
-        image, mask = exclude_empty_slices(image.data[0], mask.data[0])
+        image, mask = exclude_empty_slices(image.data[0].float(), mask.data[0].float())
 
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'vol_orig': tio.ScalarImage(tensor=image),
                         'age': None, 'ID': img_file, 'label': None,
