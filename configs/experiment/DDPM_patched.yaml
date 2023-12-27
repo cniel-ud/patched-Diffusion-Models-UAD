@@ -6,7 +6,7 @@
 defaults:
   - override /trainer: default.yaml # override trainer to null so it's not loaded from main config defaults...
   - override /model: DDPM_2D_patched.yaml
-  - override /datamodule: IXI.yaml
+  - override /datamodule: Brats.yaml
 datamodule:
   cfg:
     rescaleFactor: 2

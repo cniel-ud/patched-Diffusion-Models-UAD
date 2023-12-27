@@ -1,0 +1,46 @@
+_target_: src.datamodules.Brats
+
+cfg:
+  name: Brats
+  brats_images_train:
+  brats_images_val:
+  brats_images_test_val:
+  brats_images_test_test:
+
+  imageDim: [160,192,160]
+  rescaleFactor: 2
+  interRes: [8,8,5] #[HxWxD]
+  cropMode: 'isotropic'
+  spatialDims: ${model.cfg.spatialDims}
+  unisotropic_sampling: True
+  sample_set: False
+
+  preLoad: True
+  curvatureFlow: True
+  percentile: True
+  pad: True
+  permute: False
+
+  # Augmentations
+  randomRotate: False
+  rotateDegree: 5
+  horizontalFlip: False
+  randomBrightness: False
+  brightnessRange: (0.75,1.25)
+  randomContrast: False
+  contrastRange: (0.75,1.25)
+
+  modelpath: ${data_dir}/Data/pretrained_2D_model/
+  num_workers: 4
+  batch_size: 32
+  lr : 0.0001
+  droplast: True
+
+
+  # Evaluation
+  mode: t1
+  resizedEvaluation: True
+  testsets: # specify which test sets to evaluate!
+  - Datamodules_eval.Brats21
+
+
