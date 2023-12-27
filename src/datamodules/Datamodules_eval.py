@@ -49,6 +49,48 @@ class Brats21(LightningDataModule):
 
 
 
+
+class Brats(LightningDataModule):
+    def __init__(self, cfg, fold=None):
+        super(Brats, self).__init__()
+        self.cfg = cfg
+        self.preload = cfg.get('preload', True)
+
+        self.cfg.permute = False  # no permutation for IXI
+        self.brats_images_train = cfg.brats_train_path
+        self.brats_images_val = cfg.brats_val_path
+        self.brats_images_test_val = cfg.brats_images_test_val
+        self.brats_images_test_test = cfg.brats_images_test_test
+        states = ['train', 'val', 'test']
+
+
+
+    def setup(self, stage: Optional[str] = None):
+        # called on every GPU
+        if not hasattr(self, 'train'):
+            if self.cfg.sample_set:  # for debugging
+                raise NotImplementedError("this is not implemented yet.")
+            else:
+                self.train = create_dataset.TrainBrats(self.brats_images_train)
+                self.val = create_dataset.TrainBrats(self.brats_images_val)
+                self.val_eval = create_dataset.EvalBrats(self.brats_images_test_val)
+                self.test_eval = create_dataset.EvalBrats(self.brats_images_test_test)
+
+    def train_dataloader(self):
+        return DataLoader(self.train, batch_size=self.cfg.batch_size, num_workers=self.cfg.num_workers, pin_memory=True,
+                          shuffle=True, drop_last=self.cfg.get('droplast', False))
+
+    def val_dataloader(self):
+        return DataLoader(self.val, batch_size=self.cfg.batch_size, num_workers=self.cfg.num_workers, pin_memory=True,
+                          shuffle=False)
+
+    def val_eval_dataloader(self):
+        return DataLoader(self.val_eval, batch_size=1, num_workers=self.cfg.num_workers, pin_memory=True, shuffle=False)
+
+    def test_eval_dataloader(self):
+        return DataLoader(self.test_eval, batch_size=1, num_workers=self.cfg.num_workers, pin_memory=True,
+                          shuffle=False)
+
 class MSLUB(LightningDataModule):
 
     def __init__(self, cfg, fold= None):

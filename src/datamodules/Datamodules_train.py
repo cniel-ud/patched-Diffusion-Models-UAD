@@ -73,7 +73,7 @@ class IXI(LightningDataModule):
 
 class Brats(LightningDataModule):
     def __init__(self, cfg, fold=None):
-        super(IXI, self).__init__()
+        super(Brats, self).__init__()
         self.cfg = cfg
         self.preload = cfg.get('preload', True)
 
