@@ -78,8 +78,8 @@ class Brats(LightningDataModule):
         self.preload = cfg.get('preload', True)
 
         self.cfg.permute = False  # no permutation for IXI
-        self.brats_images_train = cfg.brats_train_path
-        self.brats_images_val = cfg.brats_val_path
+        self.brats_images_train = cfg.brats_images_train
+        self.brats_images_val = cfg.brats_images_val
         self.brats_images_test_val = cfg.brats_images_test_val
         self.brats_images_test_test = cfg.brats_images_test_test
         states = ['train', 'val', 'test']
