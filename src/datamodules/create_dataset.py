@@ -228,7 +228,20 @@ def sitk_reader(path):
     return vol, None
 
 
-def exclude_abnomral_slices(image, mask, slice_dim=0):
+def exclude_empty_slices(image, mask, slice_dim=-1):
+    slices = []
+    mask_slices = []
+    if slice_dim == -1:
+        for i in range(image.shape[:-1]):
+            if (image[..., i] > .0001).mean() >= .2:
+                slices.append(image[..., i])
+                mask_slices.append(mask[..., i])
+    else:
+        raise NotImplementedError(f'slice_dim = {slice_dim} is not supported')
+    return torch.stack(slices), torch.stack(mask_slices)
+
+
+def exclude_abnomral_slices(image, mask, slice_dim=-1):
     no_abnormal_image = []
     if slice_dim == -1:
         for i in range(image.shape[:-1]):
@@ -255,6 +268,7 @@ def TrainBrats(self, images_path: str, cfg):
 
         # Call the preprocessing method
         image = exclude_abnomral_slices(image, mask)
+        image, mask = exclude_empty_slices(image, mask)
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'age': None, 'ID': img_file, 'label': None,
                         'Dataset': None, 'stage': 'train', 'path': img_file, 'mask': tio.LabelMap(tensor=image > .001)}
         subject = tio.Subject(subject_dict)
@@ -275,6 +289,8 @@ def EvalBrats(images_path: str, cfg):
         # Read MRI images using tio
         image = tio.ScalarImage(os.path.join(images_path, img_file))
         mask = tio.LabelMap(os.path.join(images_path, mask_file))
+
+        image, mask = exclude_empty_slices(image, mask)
 
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'vol_orig': tio.ScalarImage(tensor=image),
                         'age': None, 'ID': img_file, 'label': None,
