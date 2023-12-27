@@ -232,7 +232,7 @@ def exclude_empty_slices(image, mask, slice_dim=-1):
     slices = []
     mask_slices = []
     if slice_dim == -1:
-        for i in range(image.shape[:-1]):
+        for i in range(len(image.shape[:-1])):
             if (image[..., i] > .0001).mean() >= .2:
                 slices.append(image[..., i])
                 mask_slices.append(mask[..., i])
@@ -244,7 +244,7 @@ def exclude_empty_slices(image, mask, slice_dim=-1):
 def exclude_abnomral_slices(image, mask, slice_dim=-1):
     no_abnormal_image = []
     if slice_dim == -1:
-        for i in range(image.shape[:-1]):
+        for i in range(len(image.shape[:-1])):
             if mask[..., i].mean() < .1:
                 no_abnormal_image.append(image[..., i])
     else:
@@ -256,8 +256,7 @@ def TrainBrats(images_path: str, cfg):
     # Assuming images and masks have the same naming convention and are in the same order
 
     # Get a list of image files
-    image_files = sorted([f for f in os.listdir(images_path) if f.endswith('.nii.gz')])
-
+    image_files = sorted([f for f in os.listdir(images_path) if f.endswith('.nii.gz') and f.find('seg') == -1])
     # Get a list of corresponding mask files
     mask_files = sorted([f.replace('t1', 'seg') for f in image_files])
     subjects = []
@@ -275,12 +274,13 @@ def TrainBrats(images_path: str, cfg):
         subjects.append(subject)
 
     ds = tio.SubjectsDataset(subjects, transform=tio.Compose([get_transform(cfg), get_augment(cfg)]))
+    return ds
 
 
 def EvalBrats(images_path: str, cfg):
     subjects = []
     # Get a list of image files
-    image_files = sorted([f for f in os.listdir(images_path) if f.endswith('.nii.gz')])
+    image_files = sorted([f for f in os.listdir(images_path) if f.endswith('.nii.gz') and f.find('seg') == -1])
 
     # Get a list of corresponding mask files
     mask_files = sorted([f.replace('t1', 'seg') for f in image_files])
