@@ -232,7 +232,7 @@ def exclude_empty_slices(image, mask, slice_dim=-1):
     slices = []
     mask_slices = []
     if slice_dim == -1:
-        for i in range(len(image.shape[slice_dim])):
+        for i in range(image.shape[slice_dim]):
             if (image[..., i] > .0001).float().mean() >= .2:
                 slices.append(image[..., i])
                 mask_slices.append(mask[..., i])
@@ -244,7 +244,7 @@ def exclude_empty_slices(image, mask, slice_dim=-1):
 def exclude_abnomral_slices(image, mask, slice_dim=-1):
     no_abnormal_image = []
     if slice_dim == -1:
-        for i in range(len(image.shape[slice_dim])):
+        for i in range(image.shape[slice_dim]):
             if (mask[..., i]>0).float().mean() < .1:
                 no_abnormal_image.append(image[..., i])
     else:
