@@ -1,1 +1,1 @@
-from .Datamodules_train import IXI
+from .Datamodules_train import IXI, Brats
