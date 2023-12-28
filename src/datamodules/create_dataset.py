@@ -243,13 +243,15 @@ def exclude_empty_slices(image, mask, slice_dim=-1):
 
 def exclude_abnomral_slices(image, mask, slice_dim=-1):
     no_abnormal_image = []
+    mask_slices = []
     if slice_dim == -1:
         for i in range(image.shape[slice_dim]):
             if (mask[..., i] > 0).float().mean() < .1:
                 no_abnormal_image.append(image[..., i])
+                mask_slices.append(mask[..., i])
     else:
         raise NotImplementedError(f'slice_dim = {slice_dim} is not supported')
-    return torch.stack(no_abnormal_image).permute((1, 2, 0))
+    return torch.stack(no_abnormal_image).permute((1, 2, 0)), torch.stack(mask_slices).permute((1, 2, 0))
 
 
 def TrainBrats(images_path: str, cfg):
@@ -266,7 +268,7 @@ def TrainBrats(images_path: str, cfg):
         mask = tio.LabelMap(os.path.join(images_path, mask_file))
 
         # Call the preprocessing method
-        image = exclude_abnomral_slices(image.data[0].float(), mask.data[0].float())
+        image, mask= exclude_abnomral_slices(image.data[0].float(), mask.data[0].float())
         image, mask = exclude_empty_slices(image, mask)
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'age': None, 'ID': img_file, 'label': None,
                         'Dataset': None, 'stage': 'train', 'path': img_file, 'mask': tio.LabelMap(tensor=image > .001)}
