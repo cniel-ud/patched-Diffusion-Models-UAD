@@ -298,6 +298,7 @@ def EvalBrats(images_path: str, cfg):
         image, mask = exclude_empty_slices(image.data[0].float(), mask.data[0].float())
         brain_mask = (image > .001)[None, ...]
         image = image[None, ...]
+        mask = mask[None, ...]
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'vol_orig': tio.ScalarImage(tensor=image),
                         'age': None, 'ID': img_file, 'label': None,
                         'Dataset': None, 'stage': 'train', 'path': img_file, 'mask': tio.LabelMap(tensor=brain_mask),
