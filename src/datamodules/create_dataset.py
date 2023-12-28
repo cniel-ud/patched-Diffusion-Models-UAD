@@ -264,7 +264,7 @@ def TrainBrats(images_path: str, cfg):
     subjects = []
     for img_file, mask_file in zip(image_files, mask_files):
         # Read MRI images using tio
-        sub = tio.ScalarImage(os.path.join(images_path, img_file))
+        sub = tio.ScalarImage(os.path.join(images_path, img_file), reader=sitk_reader)
         mask = tio.LabelMap(os.path.join(images_path, mask_file))
 
         # Call the preprocessing method
@@ -272,8 +272,8 @@ def TrainBrats(images_path: str, cfg):
         image, mask = exclude_empty_slices(image, mask)
         brain_mask = (image > .001)[None, ...]
         image = image[None, ...]
-        subject_dict = {'vol': tio.ScalarImage(tensor=image), 'age': sub.age, 'ID': sub.img_name, 'label': sub.label,
-                        'Dataset': sub.setname, 'stage': sub.settype, 'path': img_file,
+        subject_dict = {'vol': tio.ScalarImage(tensor=image), 'age': 70, 'ID': img_file, 'label': 'dummy',
+                        'Dataset': 'dummy', 'stage': 'stage', 'path': img_file,
                         'mask': tio.LabelMap(tensor=brain_mask)}
         subject = tio.Subject(subject_dict)
         subjects.append(subject)
@@ -292,7 +292,7 @@ def EvalBrats(images_path: str, cfg):
     subjects = []
     for img_file, mask_file in zip(image_files, mask_files):
         # Read MRI images using tio
-        sub = tio.ScalarImage(os.path.join(images_path, img_file))
+        sub = tio.ScalarImage(os.path.join(images_path, img_file), reader=sitk_reader)
         mask = tio.LabelMap(os.path.join(images_path, mask_file))
 
         image, mask = exclude_empty_slices(sub.data[0].float(), mask.data[0].float())
@@ -300,8 +300,8 @@ def EvalBrats(images_path: str, cfg):
         image = image[None, ...]
         mask = mask[None, ...]
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'vol_orig': tio.ScalarImage(tensor=image),
-                        'age': sub.age, 'ID': sub.img_name, 'label': sub.label,
-                        'Dataset': sub.setname, 'stage': sub.settype, 'path': img_file, 'mask': tio.LabelMap(tensor=brain_mask),
+                        'age':70 , 'ID': img_file, 'label': 'dummy',
+                        'Dataset': 'dataset', 'stage': 'dummy', 'path': img_file, 'mask': tio.LabelMap(tensor=brain_mask),
                         'mask_orig': tio.LabelMap(tensor=brain_mask),
                         'seg_available': True, 'seg': tio.LabelMap(tensor=mask), 'seg_orig': tio.LabelMap(tensor=mask)}
         subject = tio.Subject(subject_dict)
