@@ -254,7 +254,7 @@ def exclude_abnomral_slices(image, mask, slice_dim=-1):
     return torch.stack(no_abnormal_image).permute((1, 2, 0)), torch.stack(mask_slices).permute((1, 2, 0))
 
 
-def TrainBrats(images_path: str, cfg):
+def TrainBrats(images_path: str, cfg, preload=True):
     # Assuming images and masks have the same naming convention and are in the same order
 
     # Get a list of image files
@@ -278,7 +278,17 @@ def TrainBrats(images_path: str, cfg):
         subject = tio.Subject(subject_dict)
         subjects.append(subject)
 
-    ds = tio.SubjectsDataset(subjects, transform=tio.Compose([get_transform(cfg), get_augment(cfg)]))
+    if preload:
+        manager = Manager()
+        cache = DatasetCache(manager)
+        ds = tio.SubjectsDataset(subjects, transform=get_transform(cfg))
+        ds = preload_wrapper(ds, cache, augment=get_augment(cfg))
+    else:
+        ds = tio.SubjectsDataset(subjects, transform=tio.Compose([get_transform(cfg), get_augment(cfg)]))
+    if cfg.spatialDims == '2D':
+        slice_ind = cfg.get('startslice', None)
+        seq_slices = cfg.get('sequentialslices', None)
+        ds = vol2slice(ds, cfg, slice=slice_ind, seq_slices=seq_slices)
     return ds
 
 
@@ -300,8 +310,9 @@ def EvalBrats(images_path: str, cfg):
         image = image[None, ...]
         mask = mask[None, ...]
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'vol_orig': tio.ScalarImage(tensor=image),
-                        'age':70 , 'ID': img_file, 'label': 'dummy',
-                        'Dataset': 'dataset', 'stage': 'dummy', 'path': img_file, 'mask': tio.LabelMap(tensor=brain_mask),
+                        'age': 70, 'ID': img_file, 'label': 'dummy',
+                        'Dataset': 'dataset', 'stage': 'dummy', 'path': img_file,
+                        'mask': tio.LabelMap(tensor=brain_mask),
                         'mask_orig': tio.LabelMap(tensor=brain_mask),
                         'seg_available': True, 'seg': tio.LabelMap(tensor=mask), 'seg_orig': tio.LabelMap(tensor=mask)}
         subject = tio.Subject(subject_dict)
