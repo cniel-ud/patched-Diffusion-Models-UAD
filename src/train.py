@@ -113,9 +113,8 @@ def train(cfg: DictConfig) -> Optional[float]:
         if cfg.get('load_checkpoint') and (
                 cfg.get('onlyEval', False) or cfg.get('resume_train', False)):  # pass checkpoint to resume from
             with open_dict(cfg):
-                cfg.trainer.resume_from_checkpoint = checkpoints[f"fold-{fold + 1}"]
-                cfg.ckpt_path = None
-            log.info(f"Restoring Trainer State of loaded checkpoint: ", cfg.trainer.resume_from_checkpoint)
+                cfg.trainer.ckpt_path = checkpoints[f"fold-{fold + 1}"]
+            log.info(f"Restoring Trainer State of loaded checkpoint: ", cfg.trainer.ckpt_path)
 
         # Init lightning trainer
         log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
