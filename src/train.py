@@ -40,10 +40,10 @@ def train(cfg: DictConfig) -> Optional[float]:
             cfg.get('onlyEval') or cfg.get('resume_train')):  # load stored checkpoint for testing or resuming training
         wandbID, checkpoints = utils.get_checkpoint(cfg, cfg.get(
             'load_checkpoint'))  # outputs a Dictionary of checkpoints and the corresponding wandb ID to resume the run
-        if cfg.get('new_wandb_run', False):  # If we want to onlyEvaluate a run in a new wandb run
+        if cfg.get('new_wandb_run', False) or wandbID is None:  # If we want to onlyEvaluate a run in a new wandb run
             cfg.logger.wandb.id = wandb.util.generate_id()
         else:
-            if cfg.get('resume_wandb', True):
+            if cfg.get('resume_wandb', True) and wandbID is not None:
                 log.info(f"Resuming wandb run")
                 cfg.logger.wandb.resume = wandbID  # this will allow resuming the wandb Run
 
