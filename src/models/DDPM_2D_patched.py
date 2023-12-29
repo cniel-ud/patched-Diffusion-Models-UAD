@@ -123,7 +123,7 @@ class DDPM_2D(LightningModule):
         loss, reco = self.diffusion(input, box=bbox, noise=noise)
 
 
-        self.log(f'{self.prefix}val/Loss_comb', loss, prog_bar=False, on_step=False, on_epoch=True, batch_size=input.shape[0],sync_dist=True)
+        self.log(f'val/Loss_comb', loss, prog_bar=False, on_step=False, on_epoch=True, batch_size=input.shape[0],sync_dist=True)
         return {"loss": loss}
 
     def on_test_start(self):
