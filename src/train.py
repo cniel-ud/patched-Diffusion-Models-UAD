@@ -36,10 +36,10 @@ def train(cfg: DictConfig) -> Optional[float]:
         base_es = cfg.callbacks.early_stop.monitor  # early stop base metric
 
     # load checkpoint if specified
-    if cfg.get('ckpt_path') and (
+    if cfg.get('load_checkpoint') and (
             cfg.get('onlyEval') or cfg.get('resume_train')):  # load stored checkpoint for testing or resuming training
         wandbID, checkpoints = utils.get_checkpoint(cfg, cfg.get(
-            'ckpt_path'))  # outputs a Dictionary of checkpoints and the corresponding wandb ID to resume the run
+            'load_checkpoint'))  # outputs a Dictionary of checkpoints and the corresponding wandb ID to resume the run
         if cfg.get('new_wandb_run', False) or wandbID is None:  # If we want to onlyEvaluate a run in a new wandb run
             cfg.logger.wandb.id = wandb.util.generate_id()
         else:
@@ -110,7 +110,7 @@ def train(cfg: DictConfig) -> Optional[float]:
                     logger.append(hydra.utils.instantiate(lg_conf))
 
         # Load checkpoint if specified
-        if cfg.get('ckpt_path') and (
+        if cfg.get('load_checkpoint') and (
                 cfg.get('onlyEval', False) or cfg.get('resume_train', False)):  # pass checkpoint to resume from
             with open_dict(cfg):
                 ckpt_path = checkpoints[f"fold-{fold + 1}"]
@@ -178,7 +178,7 @@ def train(cfg: DictConfig) -> Optional[float]:
                 # Validation steps
                 log.info("Validation of {}!".format(set))
 
-                ckpt_path = cfg.get('ckpt_path', None)
+                ckpt_path = cfg.get('load_checkpoint', None)
 
                 if 'train' in set:
                     trainer.test(model=model, dataloaders=datamodule.val_eval_dataloader(), ckpt_path=ckpt_path)
