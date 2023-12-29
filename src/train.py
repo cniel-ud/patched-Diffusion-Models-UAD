@@ -163,7 +163,7 @@ def train(cfg: DictConfig) -> Optional[float]:
             preds_dict = {'val': {}, 'test': {}}  # a dict for each data set
 
             sets = {
-                't2': ['Datamodules_eval.Brats21', 'Datamodules_eval.MSLUB', 'Datamodules_train.IXI'],
+                't2': ['Datamodules_eval.Brats', 'Datamodules_eval.MSLUB', 'Datamodules_train.IXI'],
             }
 
             for set in cfg.datamodule.cfg.testsets:
