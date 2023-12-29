@@ -140,6 +140,7 @@ class DDPM_2D(LightningModule):
         self.dataset = batch['Dataset']
         input = batch['vol'][tio.DATA]
         data_orig = batch['vol_orig'][tio.DATA]
+        print(batch['seg_available'])
         data_seg = batch['seg_orig'][tio.DATA] if batch['seg_available'] else torch.zeros_like(data_orig)
         data_mask = batch['mask_orig'][tio.DATA]
         ID = batch['ID']
