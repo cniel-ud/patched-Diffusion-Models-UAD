@@ -178,7 +178,7 @@ def train(cfg: DictConfig) -> Optional[float]:
                 # Validation steps
                 log.info("Validation of {}!".format(set))
 
-                ckpt_path = cfg.get('load_checkpoint', None)
+                # ckpt_path = cfg.get('load_checkpoint', None)
 
                 if 'train' in set:
                     trainer.test(model=model, dataloaders=datamodule.val_eval_dataloader(), ckpt_path=ckpt_path)
