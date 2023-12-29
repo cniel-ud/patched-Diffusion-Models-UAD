@@ -82,6 +82,7 @@ def train(cfg: DictConfig) -> Optional[float]:
 
         # setup callbacks
         cfg.callbacks.model_checkpoint.monitor = f'{prefix}' + base  # naming of logs for cross validation
+        cfg.callbacks.early_stop.monitor =  f'{prefix}' + base
         cfg.callbacks.model_checkpoint.filename = "epoch-{epoch}_step-{step}_loss-{" + f"{prefix}" + "val/loss:.2f}"  # naming of logs for cross validation
 
         if 'early_stop' in cfg.callbacks:
