@@ -36,10 +36,10 @@ def train(cfg: DictConfig) -> Optional[float]:
         base_es = cfg.callbacks.early_stop.monitor  # early stop base metric
 
     # load checkpoint if specified
-    if cfg.get('load_checkpoint') and (
+    if cfg.get('ckpt_path') and (
             cfg.get('onlyEval') or cfg.get('resume_train')):  # load stored checkpoint for testing or resuming training
         wandbID, checkpoints = utils.get_checkpoint(cfg, cfg.get(
-            'load_checkpoint'))  # outputs a Dictionary of checkpoints and the corresponding wandb ID to resume the run
+            'ckpt_path'))  # outputs a Dictionary of checkpoints and the corresponding wandb ID to resume the run
         if cfg.get('new_wandb_run', False) or wandbID is None:  # If we want to onlyEvaluate a run in a new wandb run
             cfg.logger.wandb.id = wandb.util.generate_id()
         else:
@@ -82,7 +82,7 @@ def train(cfg: DictConfig) -> Optional[float]:
 
         # setup callbacks
         cfg.callbacks.model_checkpoint.monitor = f'{prefix}' + base  # naming of logs for cross validation
-        cfg.callbacks.early_stopping.monitor =  f'{prefix}' + base
+        cfg.callbacks.early_stopping.monitor = f'{prefix}' + base
         cfg.callbacks.model_checkpoint.filename = "epoch-{epoch}_step-{step}_loss-{" + f"{prefix}" + "val/loss:.2f}"  # naming of logs for cross validation
 
         if 'early_stop' in cfg.callbacks:
@@ -110,11 +110,11 @@ def train(cfg: DictConfig) -> Optional[float]:
                     logger.append(hydra.utils.instantiate(lg_conf))
 
         # Load checkpoint if specified
-        if cfg.get('load_checkpoint') and (
+        if cfg.get('ckpt_path') and (
                 cfg.get('onlyEval', False) or cfg.get('resume_train', False)):  # pass checkpoint to resume from
             with open_dict(cfg):
-                cfg.trainer.ckpt_path = checkpoints[f"fold-{fold + 1}"]
-            log.info(f"Restoring Trainer State of loaded checkpoint: ", cfg.trainer.ckpt_path)
+                ckpt_path = checkpoints[f"fold-{fold + 1}"]
+            log.info(f"Restoring Trainer State of loaded checkpoint: ", ckpt_path)
 
         # Init lightning trainer
         log.info(f"Instantiating trainer <{cfg.trainer._target_}>")
@@ -134,7 +134,7 @@ def train(cfg: DictConfig) -> Optional[float]:
         )
 
         if (not cfg.get('onlyEval', False) or cfg.get('resume_train', False)):  # train model
-            trainer.fit(model, datamodule_train)
+            trainer.fit(model, datamodule_train, ckpt_path=ckpt_path)
             validation_metrics = trainer.callback_metrics
         else:  # load trained model
             model.load_state_dict(torch.load(checkpoints[f'fold-{fold + 1}'])['state_dict'])
