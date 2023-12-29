@@ -70,7 +70,7 @@ class Brats(LightningDataModule):
                 raise NotImplementedError("this is not implemented yet.")
             else:
                 self.train = create_dataset.TrainBrats(self.brats_images_train, self.cfg)
-                self.val = create_dataset.TrainBrats(self.brats_images_val, self.cfg)
+                self.val = create_dataset.EvalBrats(self.brats_images_val, self.cfg)
                 self.val_eval = create_dataset.EvalBrats(self.brats_images_test_val, self.cfg)
                 self.test_eval = create_dataset.EvalBrats(self.brats_images_test_test, self.cfg)
 
