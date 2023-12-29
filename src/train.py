@@ -138,6 +138,7 @@ def train(cfg: DictConfig) -> Optional[float]:
             validation_metrics = trainer.callback_metrics
         else:  # load trained model
             model.load_state_dict(torch.load(checkpoints[f'fold-{fold + 1}'])['state_dict'])
+            log.info(f"checkpoint:{ckpt_path} is loaded")
 
         # logging
         log.info(f"Best checkpoint path:\n{trainer.checkpoint_callback.best_model_path}")
