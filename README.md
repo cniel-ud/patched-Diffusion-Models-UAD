@@ -130,6 +130,9 @@ in your terminal.
 
 Note that you will need an NVIDIA GPU with sufficient memory (~20GB) to run the experiment. 
 
+## Run Experiments using BRATS (Patch2loc work). 
+I have changed the code a bit and this is how it should be run. If you see this notes, then you
+already have my changes. Will provide two lines explain how to train the model and how to run the evaluation using the saved checkpoint. 
 
 
 

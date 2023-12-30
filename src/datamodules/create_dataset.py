@@ -262,6 +262,7 @@ def TrainBrats(images_path: str, cfg, preload=True):
     # Get a list of corresponding mask files
     mask_files = sorted([f.replace('t1', 'seg') for f in image_files])
     subjects = []
+    counter = 0
     for img_file, mask_file in zip(image_files, mask_files):
         # Read MRI images using tio
         sub = tio.ScalarImage(os.path.join(images_path, img_file), reader=sitk_reader)
@@ -272,12 +273,12 @@ def TrainBrats(images_path: str, cfg, preload=True):
         image, mask = exclude_empty_slices(image, mask)
         brain_mask = (image > .001)[None, ...]
         image = image[None, ...]
-        subject_dict = {'vol': tio.ScalarImage(tensor=image), 'age': 70, 'ID': img_file, 'label': 'dummy',
+        subject_dict = {'vol': tio.ScalarImage(tensor=image), 'age': 70, 'ID': img_file, 'label': counter,
                         'Dataset': 'dummy', 'stage': 'stage', 'path': img_file,
                         'mask': tio.LabelMap(tensor=brain_mask)}
         subject = tio.Subject(subject_dict)
         subjects.append(subject)
-
+        counter += 1
     if preload:
         manager = Manager()
         cache = DatasetCache(manager)
@@ -300,6 +301,7 @@ def EvalBrats(images_path: str, cfg):
     # Get a list of corresponding mask files
     mask_files = sorted([f.replace('t1', 'seg') for f in image_files])
     subjects = []
+    counter = 0
     for img_file, mask_file in zip(image_files, mask_files):
         # Read MRI images using tio
         sub = tio.ScalarImage(os.path.join(images_path, img_file), reader=sitk_reader)
@@ -310,12 +312,13 @@ def EvalBrats(images_path: str, cfg):
         image = image[None, ...]
         mask = mask[None, ...]
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'vol_orig': tio.ScalarImage(tensor=image),
-                        'age': 70, 'ID': img_file, 'label': 'dummy',
+                        'age': 70, 'ID': img_file, 'label': counter,
                         'Dataset': 'dataset', 'stage': 'dummy', 'path': img_file,
                         'mask': tio.LabelMap(tensor=brain_mask),
                         'mask_orig': tio.LabelMap(tensor=brain_mask),
                         'seg_available': True, 'seg': tio.LabelMap(tensor=mask), 'seg_orig': tio.LabelMap(tensor=mask)}
         subject = tio.Subject(subject_dict)
         subjects.append(subject)
+        counter += 1
     ds = tio.SubjectsDataset(subjects, transform=get_transform(cfg))
     return ds
