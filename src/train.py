@@ -170,7 +170,7 @@ def train(cfg: DictConfig) -> Optional[float]:
             for set in cfg.datamodule.cfg.testsets:
                 if not set in sets[cfg.datamodule.cfg.mode]:  # skip testsets of different modalities
                     continue
-
+                #TODO the usage of val_eval,val,test,test_eval is very confusing...
                 cfg.datamodule._target_ = 'src.datamodules.{}'.format(set)
                 log.info(f"Instantiating datamodule <{cfg.datamodule._target_}>")
                 datamodule: LightningDataModule = hydra.utils.instantiate(cfg.datamodule, fold=fold)
