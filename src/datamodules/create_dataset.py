@@ -233,7 +233,7 @@ def exclude_empty_slices(image, mask, slice_dim=-1):
     mask_slices = []
     if slice_dim == -1:
         for i in range(image.shape[slice_dim]):
-            if (image[..., i] > .0001).float().mean() >= .2:
+            if (image[..., i] > .0001).float().mean() >= .05:
                 slices.append(image[..., i])
                 mask_slices.append(mask[..., i])
     else:
