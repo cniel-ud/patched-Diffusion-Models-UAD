@@ -104,8 +104,10 @@ class Brats(LightningDataModule):
                           shuffle=False)
 
     def val_eval_dataloader(self):
+        print(f'val_eval_dataloader was called in train')
         return DataLoader(self.val_eval, batch_size=1, num_workers=self.cfg.num_workers, pin_memory=True, shuffle=False)
 
     def test_eval_dataloader(self):
+        print(f'test_eval_dataloader was called in train')
         return DataLoader(self.test_eval, batch_size=1, num_workers=self.cfg.num_workers, pin_memory=True,
                           shuffle=False)

@@ -109,6 +109,7 @@ def train(cfg: DictConfig) -> Optional[float]:
                     log.info(f"Instantiating logger <{lg_conf._target_}>")
                     logger.append(hydra.utils.instantiate(lg_conf))
 
+        ckpt_path = None
         # Load checkpoint if specified
         if cfg.get('load_checkpoint') and (
                 cfg.get('onlyEval', False) or cfg.get('resume_train', False)):  # pass checkpoint to resume from
