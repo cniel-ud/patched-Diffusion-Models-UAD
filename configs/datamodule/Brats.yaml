@@ -7,12 +7,12 @@ cfg:
   brats_images_test_val: /lustre/cniel/BraTS2021_Training_Data/heldout/val
   brats_images_test_test: /lustre/cniel/BraTS2021_Training_Data/heldout
 
-  imageDim: [160,192,160]
+  imageDim: 240x240x155
   rescaleFactor: 2
   interRes: [8,8,5] #[HxWxD]
   cropMode: 'isotropic'
   spatialDims: ${model.cfg.spatialDims}
-  unisotropic_sampling: True
+  unisotropic_sampling: False
   sample_set: False
 
   preLoad: True
