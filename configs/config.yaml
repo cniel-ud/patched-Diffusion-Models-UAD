@@ -53,3 +53,4 @@ new_wandb_run: False # if we want to reevaluate to a new wandb run
 checkpoint: 'best' # which checkpoints to load
 
 load_checkpoint: path_to_ckpt # path to checkpoint to load
+resume_train: False
