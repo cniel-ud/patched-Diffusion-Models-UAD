@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from sklearn.metrics import  confusion_matrix, roc_curve, accuracy_score, precision_recall_fscore_support, auc,precision_recall_curve, average_precision_score
-import wandb 
+import wandb
 import monai
 from torch.nn import functional as F
 from PIL import Image
@@ -18,11 +18,11 @@ import matplotlib.colors as colors
 def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID, label_vol) :
         self.healthy_sets = ['IXI']
         # Resize the images if desired
-        if not self.cfg.resizedEvaluation: # in case of full resolution evaluation 
+        if not self.cfg.resizedEvaluation: # in case of full resolution evaluation
             final_volume = F.interpolate(final_volume, size=self.new_size, mode="trilinear",align_corners=True).squeeze() # resize
-        else: 
+        else:
             final_volume = final_volume.squeeze()
-        
+
         # calculate the residual image
         if self.cfg.get('residualmode','l1'): # l1 or l2 residual
             diff_volume = torch.abs((data_orig-final_volume))
@@ -32,9 +32,9 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
        # Calculate Reconstruction errors with respect to anomal/normal regions
         l1err = nn.functional.l1_loss(final_volume.squeeze(),data_orig.squeeze())
         l2err = nn.functional.mse_loss(final_volume.squeeze(),data_orig.squeeze())
-        l1err_anomal = nn.functional.l1_loss(final_volume.squeeze()[data_seg.squeeze() > 0],data_orig[data_seg > 0]) 
-        l1err_healthy = nn.functional.l1_loss(final_volume.squeeze()[data_seg.squeeze() == 0],data_orig[data_seg == 0]) 
-        l2err_anomal = nn.functional.mse_loss(final_volume.squeeze()[data_seg.squeeze() > 0],data_orig[data_seg > 0]) 
+        l1err_anomal = nn.functional.l1_loss(final_volume.squeeze()[data_seg.squeeze() > 0],data_orig[data_seg > 0])
+        l1err_healthy = nn.functional.l1_loss(final_volume.squeeze()[data_seg.squeeze() == 0],data_orig[data_seg == 0])
+        l2err_anomal = nn.functional.mse_loss(final_volume.squeeze()[data_seg.squeeze() > 0],data_orig[data_seg > 0])
         l2err_healthy = nn.functional.mse_loss(final_volume.squeeze()[data_seg.squeeze() == 0],data_orig[data_seg == 0])
 
         # store in eval dict
@@ -46,7 +46,7 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
         self.eval_dict['l2recoErrorHealthy'].append(l2err_healthy.item())
 
         # move data to CPU
-        data_seg = data_seg.cpu() 
+        data_seg = data_seg.cpu()
         data_mask = data_mask.cpu()
         diff_volume = diff_volume.cpu()
         data_orig = data_orig.cpu()
@@ -55,9 +55,9 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
         data_seg[data_seg > 0] = 1
         data_mask[data_mask > 0] = 1
 
-        # Erode the Brainmask 
+        # Erode the Brainmask
         if self.cfg['erodeBrainmask']:
-            diff_volume = apply_brainmask_volume(diff_volume.cpu(), data_mask.squeeze().cpu())   
+            diff_volume = apply_brainmask_volume(diff_volume.cpu(), data_mask.squeeze().cpu())
 
         # Filter the DifferenceImage
         if self.cfg['medianFiltering']:
@@ -66,21 +66,23 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
         # save image grid
         if self.cfg['saveOutputImages'] :
             log_images(self,diff_volume, data_orig, data_seg, data_mask, final_volume, ID)
-            
+
         ### Compute Metrics per Volume / Step ###
         if self.cfg.evalSeg and self.dataset[0] not in self.healthy_sets: # only compute metrics if segmentation is available
 
             # Pixel-Wise Segmentation Error Metrics based on Differenceimage
             AUC, _fpr, _tpr, _threshs = compute_roc(diff_volume.squeeze().flatten(), np.array(data_seg.squeeze().flatten()).astype(bool))
+            self.eval_dict['allVolDiff'].append(diff_volume.squeeze().flatten().numpy())
+            self.y_combined['allVolGT'].append(np.array(data_seg.squeeze().flatten()).astype(bool))
             AUPRC, _precisions, _recalls, _threshs = compute_prc(diff_volume.squeeze().flatten(),np.array(data_seg.squeeze().flatten()).astype(bool))
 
             # gready search for threshold
             bestDice, bestThresh = find_best_val(np.array(diff_volume.squeeze()).flatten(),  # threshold search with a subset of EvaluationSet
-                                                np.array(data_seg.squeeze()).flatten().astype(bool), 
+                                                np.array(data_seg.squeeze()).flatten().astype(bool),
                                                 val_range=(0, np.max(np.array(diff_volume))),
-                                                max_steps=10, 
-                                                step=0, 
-                                                max_val=0, 
+                                                max_steps=10,
+                                                step=0,
+                                                max_val=0,
                                                 max_point=0)
 
             if 'test' in self.stage:
@@ -89,15 +91,15 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
             if self.cfg["threshold"] == 'auto':
                 diffs_thresholded = diff_volume > bestThresh
             else: # never used
-                diffs_thresholded = diff_volume > self.cfg["threshold"]    
-            
+                diffs_thresholded = diff_volume > self.cfg["threshold"]
+
             # Connected Components
             if not 'node' in self.dataset[0].lower(): # no 3D data
                 diffs_thresholded = filter_3d_connected_components(np.squeeze(diffs_thresholded)) # this is only done for patient-wise evaluation atm
-            
+
             # Calculate Dice Score with thresholded volumes
             diceScore = dice(np.array(diffs_thresholded.squeeze()),np.array(data_seg.squeeze().flatten()).astype(bool))
-            
+
             # Other Metrics
             TP, FP, TN, FN = confusion_matrix(np.array(diffs_thresholded.squeeze().flatten()), np.array(data_seg.squeeze().flatten()).astype(bool),labels=[0, 1]).ravel()
             TPR = tpr(np.array(diffs_thresholded.squeeze()), np.array(data_seg.squeeze().flatten()).astype(bool))
@@ -111,7 +113,7 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
             self.eval_dict['TPPerVol'].append(TP)
             self.eval_dict['FPPerVol'].append(FP)
             self.eval_dict['TNPerVol'].append(TN)
-            self.eval_dict['FNPerVol'].append(FN) 
+            self.eval_dict['FNPerVol'].append(FN)
             self.eval_dict['TPRPerVol'].append(TPR)
             self.eval_dict['FPRPerVol'].append(FPR)
             self.eval_dict['IDs'].append(ID[0])
@@ -129,7 +131,7 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
             self.eval_dict['HausPerVol'].append(Haus.item())
 
             # compute slice-wise metrics
-            for slice in range(data_seg.squeeze().shape[0]): 
+            for slice in range(data_seg.squeeze().shape[0]):
                     if np.array(data_seg.squeeze()[slice].flatten()).astype(bool).any():
                         self.eval_dict['DiceScorePerSlice'].append(dice(np.array(diff_volume.squeeze()[slice] > bestThresh),np.array(data_seg.squeeze()[slice].flatten()).astype(bool)))
                         PrecRecF1PerSlice = precision_recall_fscore_support(np.array(data_seg.squeeze()[slice].flatten()).astype(bool),np.array(diff_volume.squeeze()[slice] > bestThresh).flatten(),warn_for=tuple(),labels=[0,1])
@@ -141,24 +143,24 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
             if batch_idx == 0:
                 self.diffs_list = np.array(diff_volume.squeeze().flatten())
                 self.seg_list = np.array(data_seg.squeeze().flatten()).astype(np.int8)
-            else: 
+            else:
                 self.diffs_list = np.append(self.diffs_list,np.array(diff_volume.squeeze().flatten()),axis=0)
                 self.seg_list = np.append(self.seg_list,np.array(data_seg.squeeze().flatten()),axis=0).astype(np.int8)
 
-        # Reconstruction based Anomaly score for Slice-Wise evaluation  
+        # Reconstruction based Anomaly score for Slice-Wise evaluation
         if self.cfg.get('use_postprocessed_score', True):
-            AnomalyScoreReco_vol = diff_volume.squeeze()[data_mask.squeeze()>0].mean() # for sample-wise detection 
+            AnomalyScoreReco_vol = diff_volume.squeeze()[data_mask.squeeze()>0].mean() # for sample-wise detection
 
         AnomalyScoreReco = [] # Reconstruction based Anomaly score
         if len(diff_volume.squeeze().shape) !=2:
-            for slice in range(diff_volume.squeeze().shape[0]): 
+            for slice in range(diff_volume.squeeze().shape[0]):
                 score = diff_volume.squeeze()[slice][data_mask.squeeze()[slice]>0].mean()
                 if score.isnan() : # if no brain exists in that slice
-                    AnomalyScoreReco.append(0.0) 
-                else: 
-                    AnomalyScoreReco.append(score) 
+                    AnomalyScoreReco.append(0.0)
+                else:
+                    AnomalyScoreReco.append(score)
 
-            # create slice-wise labels 
+            # create slice-wise labels
             data_seg_downsampled = np.array(data_seg.squeeze())
             label = [] # store labels here
             for slice in range(data_seg_downsampled.shape[0]) :  #iterate through volume
@@ -166,7 +168,7 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
                     label.append(1) # label = 1
                 else :
                     label.append(0) # label = 0 if there is no Anomaly in the slice
-                    
+
             if self.dataset[0] not in self.healthy_sets:
                 AUC, _fpr, _tpr, _threshs = compute_roc(np.array(AnomalyScoreReco),np.array(label))
                 AUPRC, _precisions, _recalls, _threshs = compute_prc(np.array(AnomalyScoreReco),np.array(label))
@@ -183,11 +185,16 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
             self.eval_dict['AnomalyScoreCombiPerVol'].append(AnomalyScoreReco_vol )
             self.eval_dict['AnomalyScoreCombPriorPerVol'].append(AnomalyScoreReco_vol)
             self.eval_dict['AnomalyScoreCombiPriorPerVol'].append(AnomalyScoreReco_vol )
-        
+
 
         self.eval_dict['labelPerVol'].append(label_vol.item())
 
 def _test_end(self) :
+
+        allVolDiff = np.concatenate(self.eval_dict['allVolDiff'])
+        allVolGT = np.concatenate(self.eval_dict['allVolGT'])
+        self.eval_dict['macroAUPRC'] = compute_prc(allVolDiff,allVolGT)
+        self.eval_dict['macroDice'] = dice( allVolDiff > self.threshold['total'],allVolGT)
     # average over all test samples
         self.eval_dict['l1recoErrorAllMean'] = np.nanmean(self.eval_dict['l1recoErrorAll'])
         self.eval_dict['l1recoErrorAllStd'] = np.nanstd(self.eval_dict['l1recoErrorAll'])
@@ -231,7 +238,7 @@ def _test_end(self) :
         self.eval_dict['FPRPerVolStd'] = np.nanstd(self.eval_dict['FPRPerVol'])
         self.eval_dict['HausPerVolMean'] = np.nanmean(np.array(self.eval_dict['HausPerVol'])[np.isfinite(self.eval_dict['HausPerVol'])])
         self.eval_dict['HausPerVolStd'] = np.nanstd(np.array(self.eval_dict['HausPerVol'])[np.isfinite(self.eval_dict['HausPerVol'])])
-        
+
 
 
         self.eval_dict['PrecisionPerVolMean'] = np.mean(self.eval_dict['PrecisionPerVol'])
@@ -250,34 +257,34 @@ def _test_end(self) :
 
         if 'test' in self.stage :
             del self.threshold
-                
-        if 'val' in self.stage: 
+
+        if 'val' in self.stage:
             if self.dataset[0] not in self.healthy_sets:
-                bestdiceScore, bestThresh = find_best_val((self.diffs_list).flatten(), (self.seg_list).flatten().astype(bool), 
-                                        val_range=(0, np.max((self.diffs_list))), 
-                                        max_steps=10, 
-                                        step=0, 
-                                        max_val=0, 
+                bestdiceScore, bestThresh = find_best_val((self.diffs_list).flatten(), (self.seg_list).flatten().astype(bool),
+                                        val_range=(0, np.max((self.diffs_list))),
+                                        max_steps=10,
+                                        step=0,
+                                        max_val=0,
                                         max_point=0)
 
-                self.threshold['total'] = bestThresh 
-                if self.cfg.get('KLDBackprop',False): 
-                    bestdiceScoreKLComb, bestThreshKLComb = find_best_val((self.diffs_listKLComb).flatten(), (self.seg_list).flatten().astype(bool), 
-                        val_range=(0, np.max((self.diffs_listKLComb))), 
-                        max_steps=10, 
-                        step=0, 
-                        max_val=0, 
+                self.threshold['total'] = bestThresh
+                if self.cfg.get('KLDBackprop',False):
+                    bestdiceScoreKLComb, bestThreshKLComb = find_best_val((self.diffs_listKLComb).flatten(), (self.seg_list).flatten().astype(bool),
+                        val_range=(0, np.max((self.diffs_listKLComb))),
+                        max_steps=10,
+                        step=0,
+                        max_val=0,
                         max_point=0)
 
-                    self.threshold['totalKLComb'] = bestThreshKLComb 
-                    bestdiceScoreKL, bestThreshKL = find_best_val((self.diffs_listKL).flatten(), (self.seg_list).flatten().astype(bool), 
-                        val_range=(0, np.max((self.diffs_listKL))), 
-                        max_steps=10, 
-                        step=0, 
-                        max_val=0, 
+                    self.threshold['totalKLComb'] = bestThreshKLComb
+                    bestdiceScoreKL, bestThreshKL = find_best_val((self.diffs_listKL).flatten(), (self.seg_list).flatten().astype(bool),
+                        val_range=(0, np.max((self.diffs_listKL))),
+                        max_steps=10,
+                        step=0,
+                        max_val=0,
                         max_point=0)
 
-                    self.threshold['totalKL'] = bestThreshKL 
+                    self.threshold['totalKL'] = bestThreshKL
             else: # define thresholds based on the healthy validation set
                 _, fpr_healthy, _, threshs = compute_roc((self.diffs_list).flatten(), np.zeros_like(self.diffs_list).flatten().astype(int))
                 self.threshholds_healthy= {
@@ -289,27 +296,27 @@ def _test_end(self) :
                 self.eval_dict['t_10p'] = self.threshholds_healthy['thresh_10p']
 def calc_thresh(dataset):
     data = dataset['Datamodules_train.Chexpert']
-    _, fpr_healthy_comb, _, threshs_healthy_comb = compute_roc(np.array(data['AnomalyScoreCombPerVol']),np.array(data['labelPerVol'])) 
+    _, fpr_healthy_comb, _, threshs_healthy_comb = compute_roc(np.array(data['AnomalyScoreCombPerVol']),np.array(data['labelPerVol']))
     _, fpr_healthy_combPrior, _, threshs_healthy_combPrior = compute_roc(np.array(data['AnomalyScoreCombPriorPerVol']),np.array(data['labelPerVol']))
     _, fpr_healthy_reg, _, threshs_healthy_reg = compute_roc(np.array(data['AnomalyScoreRegPerVol']),np.array(data['labelPerVol']))
     _, fpr_healthy_reco, _, threshs_healthy_reco = compute_roc(np.array(data['AnomalyScoreRecoPerVol']),np.array(data['labelPerVol']))
     _, fpr_healthy_prior_kld, _, threshs_healthy_prior_kld = compute_roc(np.array(data['KLD_to_learned_prior']),np.array(data['labelPerVol']))
     threshholds_healthy= {
-                'thresh_1p_comb' : threshs_healthy_comb[np.argmax(fpr_healthy_comb>0.01)], 
-                'thresh_1p_combPrior' : threshs_healthy_combPrior[np.argmax(fpr_healthy_combPrior>0.01)], 
-                'thresh_1p_reg' : threshs_healthy_reg[np.argmax(fpr_healthy_reg>0.01)], 
-                'thresh_1p_reco' : threshs_healthy_reco[np.argmax(fpr_healthy_reco>0.01)], 
-                'thresh_1p_prior_kld' : threshs_healthy_prior_kld[np.argmax(fpr_healthy_prior_kld>0.01)], 
-                'thresh_5p_comb' : threshs_healthy_comb[np.argmax(fpr_healthy_comb>0.05)], 
-                'thresh_5p_combPrior' : threshs_healthy_combPrior[np.argmax(fpr_healthy_combPrior>0.05)], 
-                'thresh_5p_reg' : threshs_healthy_reg[np.argmax(fpr_healthy_reg>0.05)], 
-                'thresh_5p_reco' : threshs_healthy_reco[np.argmax(fpr_healthy_reco>0.05)], 
-                'thresh_5p_prior_kld' : threshs_healthy_prior_kld[np.argmax(fpr_healthy_prior_kld>0.05)], 
-                'thresh_10p_comb' : threshs_healthy_comb[np.argmax(fpr_healthy_comb>0.1)], 
+                'thresh_1p_comb' : threshs_healthy_comb[np.argmax(fpr_healthy_comb>0.01)],
+                'thresh_1p_combPrior' : threshs_healthy_combPrior[np.argmax(fpr_healthy_combPrior>0.01)],
+                'thresh_1p_reg' : threshs_healthy_reg[np.argmax(fpr_healthy_reg>0.01)],
+                'thresh_1p_reco' : threshs_healthy_reco[np.argmax(fpr_healthy_reco>0.01)],
+                'thresh_1p_prior_kld' : threshs_healthy_prior_kld[np.argmax(fpr_healthy_prior_kld>0.01)],
+                'thresh_5p_comb' : threshs_healthy_comb[np.argmax(fpr_healthy_comb>0.05)],
+                'thresh_5p_combPrior' : threshs_healthy_combPrior[np.argmax(fpr_healthy_combPrior>0.05)],
+                'thresh_5p_reg' : threshs_healthy_reg[np.argmax(fpr_healthy_reg>0.05)],
+                'thresh_5p_reco' : threshs_healthy_reco[np.argmax(fpr_healthy_reco>0.05)],
+                'thresh_5p_prior_kld' : threshs_healthy_prior_kld[np.argmax(fpr_healthy_prior_kld>0.05)],
+                'thresh_10p_comb' : threshs_healthy_comb[np.argmax(fpr_healthy_comb>0.1)],
                 'thresh_10p_combPrior' : threshs_healthy_combPrior[np.argmax(fpr_healthy_combPrior>0.1)],
-                'thresh_10p_reg' : threshs_healthy_reg[np.argmax(fpr_healthy_reg>0.1)], 
+                'thresh_10p_reg' : threshs_healthy_reg[np.argmax(fpr_healthy_reg>0.1)],
                 'thresh_10p_reco' : threshs_healthy_reco[np.argmax(fpr_healthy_reco>0.1)],
-                'thresh_10p_prior_kld' : threshs_healthy_prior_kld[np.argmax(fpr_healthy_prior_kld>0.1)], } 
+                'thresh_10p_prior_kld' : threshs_healthy_prior_kld[np.argmax(fpr_healthy_prior_kld>0.1)], }
     return threshholds_healthy
 
 def get_eval_dictionary():
@@ -430,7 +437,10 @@ def get_eval_dictionary():
         'TPRKLPerVol': [],
         'FPRKLPerVol': [],
 
-
+        'allVolDiff': [],
+        'allVolGT': [],
+        'macroAUPRC': [],
+        'macroDice': []
 
     }
     return _eval
@@ -442,8 +452,8 @@ def apply_brainmask(x, brainmask, erode , iterations):
         brainmask = scipy.ndimage.morphology.binary_erosion(np.squeeze(brainmask), structure=strel, iterations=iterations)
     return np.multiply(np.squeeze(brainmask), np.squeeze(x))
 
-def apply_brainmask_volume(vol,mask_vol,erode=True, iterations=10) : 
-    for s in range(vol.squeeze().shape[2]): 
+def apply_brainmask_volume(vol,mask_vol,erode=True, iterations=10) :
+    for s in range(vol.squeeze().shape[2]):
         slice = vol.squeeze()[:,:,s]
         mask_slice = mask_vol.squeeze()[:,:,s]
         eroded_vol_slice = apply_brainmask(slice, mask_slice, erode = True, iterations=vol.squeeze().shape[1]//25)
@@ -456,7 +466,7 @@ def apply_3d_median_filter(volume, kernelsize=5):  # kernelsize 5 works quite we
 def apply_2d_median_filter(volume, kernelsize=5):  # kernelsize 5 works quite well
     img = scipy.ndimage.filters.median_filter(volume, (kernelsize, kernelsize))
     return img
-    
+
 def squash_intensities(img):
     # logistic function intended to squash reconstruction errors from [0;0.2] to [0;1] (just an example)
     k = 100
@@ -535,7 +545,7 @@ def dice(P, G):
     score = (2 * pgsum) / (psum + gsum)
     return score
 
-    
+
 def compute_roc(predictions, labels):
     _fpr, _tpr, _ = roc_curve(labels.astype(int), predictions,pos_label=1)
     roc_auc = auc(_fpr, _tpr)
@@ -545,9 +555,9 @@ def compute_roc(predictions, labels):
 def compute_prc(predictions, labels):
     precisions, recalls, thresholds = precision_recall_curve(labels.astype(int), predictions)
     auprc = average_precision_score(labels.astype(int), predictions)
-    return auprc, precisions, recalls, thresholds   
+    return auprc, precisions, recalls, thresholds
 
-# Dice Score 
+# Dice Score
 def xfrange(start, stop, step):
     i = 0
     while start + i * step < stop:
@@ -580,7 +590,7 @@ def log_images(self, diff_volume, data_orig, data_seg, data_mask, final_volume, 
         if not os.path.isdir(ImagePathList[key]):
             os.mkdir(ImagePathList[key])
 
-    for j in range(0,diff_volume.squeeze().shape[2],10) : 
+    for j in range(0,diff_volume.squeeze().shape[2],10) :
 
         # create a figure of images with 1 row and 4 columns for subplots
         fig, ax = plt.subplots(1,4,figsize=(16,4))
@@ -594,7 +604,7 @@ def log_images(self, diff_volume, data_orig, data_seg, data_mask, final_volume, 
         ax[2].imshow(diff_volume.squeeze()[:,...,j].rot90(3),'inferno',norm=colors.Normalize(vmin=0, vmax=diff_volume.max()+.01))
         # mask
         ax[3].imshow(data_seg.squeeze()[...,j].rot90(3),'gray')
-        
+
         # remove all the ticks (both axes), and tick labels
         for axes in ax:
             axes.set_xticks([])
@@ -607,7 +617,7 @@ def log_images(self, diff_volume, data_orig, data_seg, data_mask, final_volume, 
             axes.spines['left'].set_visible(False)
         # remove the white space around the chart
         plt.tight_layout()
-        
+
         if self.cfg.get('save_to_disc',True):
             plt.savefig(os.path.join(ImagePathList['imagesGrid'], '{}_{}_Grid.png'.format(ID[0],j)),bbox_inches='tight')
         self.logger.experiment.log({'images/{}/{}_Grid.png'.format(self.dataset[0],j) : wandb.Image(plt)})
