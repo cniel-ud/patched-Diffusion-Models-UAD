@@ -189,7 +189,7 @@ def get_checkpoint(cfg, path):
     checkpoint_path = path
     
     checkpoints = {}
-    if checkpoints[-4:] == 'ckpt':
+    if checkpoint_path[-4:] == 'ckpt':
         checkpoints[f'fold-0'] = checkpoint_path
         return checkpoints
     checkpoint_to_load = cfg.get("checkpoint",'last') # default to last.ckpt
