@@ -8,7 +8,7 @@ import rich.syntax
 import rich.tree
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.utilities import rank_zero_only
-import yaml 
+import yaml
 
 def get_logger(name=__name__, level=logging.INFO) -> logging.Logger:
     """Initializes multi-GPU-friendly python logger."""
@@ -177,7 +177,7 @@ def summarize(eval_dict, prefix): # removes list entries from dictionary for fas
             eval_dict_new[prefix + '/' + key] = eval_dict[key]
     return eval_dict_new
 
-def get_yaml(path): # read yaml 
+def get_yaml(path): # read yaml
     with open(path, "r") as stream:
         try:
             file = yaml.safe_load(stream)
@@ -185,16 +185,20 @@ def get_yaml(path): # read yaml
             print(exc)
     return file
 
-def get_checkpoint(cfg, path): 
+def get_checkpoint(cfg, path):
     checkpoint_path = path
-    checkpoint_to_load = cfg.get("checkpoint",'last') # default to last.ckpt 
+    
+    checkpoints = {}
+    if checkpoints[-4:] == 'ckpt':
+        checkpoints[f'fold-0'] = checkpoint_path
+        return checkpoints
+    checkpoint_to_load = cfg.get("checkpoint",'last') # default to last.ckpt
     all_checkpoints = os.listdir(checkpoint_path + '/checkpoints')
     hparams = get_yaml(path+'/csv//hparams.yaml')
     if 'run_id' in hparams:
         wandbID = hparams['run_id']
     else:
         wandbID = None
-    checkpoints = {}
     for fold in range(cfg.get('num_folds',1)):
         checkpoints[f'fold-{fold+1}'] = [] # dict to store the checkpoints with their path for different folds
 
@@ -210,7 +214,7 @@ def get_checkpoint(cfg, path):
             for cp in matching_checkpoints:
                 if fold in cp:
                     checkpoints[fold].append(checkpoint_path + '/checkpoints/' + cp)
-            if not 'best_k' in checkpoint_to_load: # best_k loads the k best checkpoints 
+            if not 'best_k' in checkpoint_to_load: # best_k loads the k best checkpoints
                 checkpoints[fold] = checkpoints[fold][0] # get only the best (first) checkpoint of that fold
     return wandbID, checkpoints
 
@@ -218,13 +222,13 @@ def get_checkpoint(cfg, path):
 def calc_interres(dims,fac,num_pooling,k,p,s):
     dims = [int(x/fac) for x in dims]
     if len(dims)==2:
-        w,h = dims 
+        w,h = dims
         d = None
     else:
         w,h,d = dims
     for i in range(num_pooling):
         w = int((w-k+2*p)/s +1)
         h = int((h-k+2*p)/s +1)
-        if d is not None: 
+        if d is not None:
             d = int((d-k+2*p)/s +1)
-    return [w,h] if d is None else [w,h,d] 
+    return [w,h] if d is None else [w,h,d]
