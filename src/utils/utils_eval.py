@@ -194,8 +194,8 @@ def _test_end(self) :
         allVolDiff = np.concatenate(self.eval_dict['allVolDiff'])
         allVolGT = np.concatenate(self.eval_dict['allVolGT'])
         self.eval_dict['macroAUPRC'] = compute_prc(allVolDiff,allVolGT)
-        print(self.threshold)
-        self.eval_dict['macroDice'] = dice( allVolDiff > self.threshold['total'],allVolGT)
+        if 'total' in self.threshold:
+            self.eval_dict['macroDice'] = dice( allVolDiff > self.threshold['total'],allVolGT)
     # average over all test samples
         self.eval_dict['l1recoErrorAllMean'] = np.nanmean(self.eval_dict['l1recoErrorAll'])
         self.eval_dict['l1recoErrorAllStd'] = np.nanstd(self.eval_dict['l1recoErrorAll'])
