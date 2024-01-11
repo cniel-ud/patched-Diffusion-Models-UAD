@@ -73,7 +73,7 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
             # Pixel-Wise Segmentation Error Metrics based on Differenceimage
             AUC, _fpr, _tpr, _threshs = compute_roc(diff_volume.squeeze().flatten(), np.array(data_seg.squeeze().flatten()).astype(bool))
             self.eval_dict['allVolDiff'].append(diff_volume.squeeze().flatten().numpy())
-            self.y_combined['allVolGT'].append(np.array(data_seg.squeeze().flatten()).astype(bool))
+            self.eval_dict['allVolGT'].append(np.array(data_seg.squeeze().flatten()).astype(bool))
             AUPRC, _precisions, _recalls, _threshs = compute_prc(diff_volume.squeeze().flatten(),np.array(data_seg.squeeze().flatten()).astype(bool))
 
             # gready search for threshold
