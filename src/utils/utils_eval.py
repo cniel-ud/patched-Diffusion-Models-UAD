@@ -197,7 +197,7 @@ def _test_end(self) :
         print(f'************macroAUPRC*********{self.eval_dict["macroAUPRC"]}')
         #this if statment assumes that if best_threshold_total not in eval_dict then it is a validation dataset used to find the best threshold
         if not 'best_threshold_total' in self.eval_dict:
-            best_threshold_total = find_best_val(allVolDiff.flatten(),allVolGT.flatten().astype(bool),
+            _,best_threshold_total = find_best_val(allVolDiff.flatten(),allVolGT.flatten().astype(bool),
                                                   val_range=(0, np.max(allVolDiff)),
                                                   max_steps=10,
                                                   step=0,
