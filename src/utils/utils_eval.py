@@ -204,7 +204,7 @@ def _test_end(self) :
                                                   max_val=0,
                                                   max_point=0)
             self.eval_dict['best_threshold_total'] = best_threshold_total
-            self.eval_dict['macroDice'] = dice( allVolDiff > self.threshold['best_threshold_total'],allVolGT)
+            self.eval_dict['macroDice'] = dice( allVolDiff > self.eval_dict['best_threshold_total'],allVolGT)
             print(f'************macroDice*********{self.eval_dict["macroDice"]}')
         else:
             self.eval_dict['macroDice'] = dice( allVolDiff > self.threshold['best_threshold_total'],allVolGT)
