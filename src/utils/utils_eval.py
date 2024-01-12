@@ -195,8 +195,19 @@ def _test_end(self) :
         allVolGT = np.concatenate(self.eval_dict['allVolGT'])
         self.eval_dict['macroAUPRC'] = compute_prc(allVolDiff,allVolGT)
         print(f'************macroAUPRC*********{self.eval_dict["macroAUPRC"]}')
-        if 'total' in self.threshold:
-            self.eval_dict['macroDice'] = dice( allVolDiff > self.threshold['total'],allVolGT)
+        #this if statment assumes that if best_threshold_total not in eval_dict then it is a validation dataset used to find the best threshold
+        if not 'best_threshold_total' in self.eval_dict:
+            best_threshold_total = find_best_val(allVolDiff.flatten(),allVolGT.flatten().astype(bool),
+                                                  val_range=(0, np.max(allVolDiff)),
+                                                  max_steps=10,
+                                                  step=0,
+                                                  max_val=0,
+                                                  max_point=0)
+            self.eval_dict['best_threshold_total'] = best_threshold_total
+            self.eval_dict['macroDice'] = dice( allVolDiff > self.threshold['best_threshold_total'],allVolGT)
+            print(f'************macroDice*********{self.eval_dict["macroDice"]}')
+        else:
+            self.eval_dict['macroDice'] = dice( allVolDiff > self.threshold['best_threshold_total'],allVolGT)
             print(f'************macroDice*********{self.eval_dict["macroDice"]}')
         # average over all test samples
         self.eval_dict['l1recoErrorAllMean'] = np.nanmean(self.eval_dict['l1recoErrorAll'])
