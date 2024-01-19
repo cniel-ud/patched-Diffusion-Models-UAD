@@ -72,6 +72,10 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
 
             # Pixel-Wise Segmentation Error Metrics based on Differenceimage
             AUC, _fpr, _tpr, _threshs = compute_roc(diff_volume.squeeze().flatten(), np.array(data_seg.squeeze().flatten()).astype(bool))
+            #TODO this will break for DDPM experiement.
+            self.error_maps.append(diff_volume.cpu().numpy())
+            self.true_labels.append(np.array(data_seg.squeeze().flatten()).astype(bool))
+
             self.eval_dict['allVolDiff'].append(diff_volume.squeeze().flatten().numpy())
             self.eval_dict['allVolGT'].append(np.array(data_seg.squeeze().flatten()).astype(bool))
             AUPRC, _precisions, _recalls, _threshs = compute_prc(diff_volume.squeeze().flatten(),np.array(data_seg.squeeze().flatten()).astype(bool))
@@ -190,6 +194,8 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
         self.eval_dict['labelPerVol'].append(label_vol.item())
 
 def _test_end(self) :
+        tmp = {'error_maps': self.error_maps, 'labels': self.true_labels}
+        np.save('/lustre/cniel/patchedDiffusion_results', tmp)
 
         allVolDiff = np.concatenate(self.eval_dict['allVolDiff'])
         allVolGT = np.concatenate(self.eval_dict['allVolGT'])

@@ -16,7 +16,8 @@ class DDPM_2D(LightningModule):
         super().__init__()
         
         self.cfg = cfg
-
+        self.true_labels = []
+        self.error_maps = []
         # Model 
 
         model = OpenAI_UNet(
