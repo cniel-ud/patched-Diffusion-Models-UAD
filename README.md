@@ -134,5 +134,10 @@ Note that you will need an NVIDIA GPU with sufficient memory (~20GB) to run the 
 I have changed the code a bit and this is how it should be run. If you see this notes, then you
 already have my changes. Will provide two lines explain how to train the model and how to run the evaluation using the saved checkpoint. 
 
+```python3 run.py``` (using default settings in configs file)
+
+For evaluation (replace this checkpoint path by the one obtained from your training):
+
+`` python3 run.py experiment=DDPM_patched load_checkpoint=/lustre/cniel/patched-Diffusion-Models-UAD/checkpoints/epoch-604_step-12705_loss-0.00_fold-1.ckpt onlyEval=True ``
 
 
