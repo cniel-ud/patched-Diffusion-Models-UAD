@@ -73,7 +73,6 @@ def _test_step(self, final_volume, data_orig, data_seg, data_mask, batch_idx, ID
             # Pixel-Wise Segmentation Error Metrics based on Differenceimage
             AUC, _fpr, _tpr, _threshs = compute_roc(diff_volume.squeeze().flatten(), np.array(data_seg.squeeze().flatten()).astype(bool))
             #TODO this will break for DDPM experiement.
-            print(diff_volume.shape)
             self.error_maps.append(diff_volume.cpu().numpy())
             self.true_labels.append(np.array(data_seg.squeeze().flatten()).astype(bool))
 
