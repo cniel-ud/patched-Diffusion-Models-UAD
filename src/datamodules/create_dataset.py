@@ -266,10 +266,11 @@ def TrainBrats(images_path: str, cfg, preload=True):
     for img_file, mask_file in zip(image_files, mask_files):
         # Read MRI images using tio
         sub = tio.ScalarImage(os.path.join(images_path, img_file), reader=sitk_reader)
-        mask = tio.LabelMap(os.path.join(images_path, mask_file))
+        if cfg.train_contains_tumor:
+            mask = tio.LabelMap(os.path.join(images_path, mask_file))
+            image, mask = exclude_abnomral_slices(sub.data[0].float(), mask.data[0].float())
 
         # Call the preprocessing method
-        image, mask = exclude_abnomral_slices(sub.data[0].float(), mask.data[0].float())
         image, mask = exclude_empty_slices(image, mask)
         brain_mask = (image > .001)[None, ...]
         image = image[None, ...]

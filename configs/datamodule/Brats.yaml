@@ -2,8 +2,9 @@ _target_: src.datamodules.Brats
 
 cfg:
   name: Brats
-  brats_images_train: /lustre/cniel/BraTS2021_Training_Data
-  brats_images_val: /lustre/cniel/BraTS2021_Training_Data/val
+  train_contains_tumor: False
+  brats_images_train: /lustre/scratch/bakerh/ds003097-derivative
+  brats_images_val: /lustre/scratch/bakerh/ds003097-derivative/heldout
   brats_images_test_val: /lustre/cniel/BraTS2021_Training_Data/heldout/val
   brats_images_test_test: /lustre/cniel/BraTS2021_Training_Data/heldout
 

@@ -92,8 +92,9 @@ class Brats(LightningDataModule):
             else:
                 self.train = create_dataset.TrainBrats(self.brats_images_train, self.cfg)
                 self.val = create_dataset.TrainBrats(self.brats_images_val, self.cfg)
-                self.val_eval = create_dataset.EvalBrats(self.brats_images_test_val, self.cfg)
-                self.test_eval = create_dataset.EvalBrats(self.brats_images_test_test, self.cfg)
+                # TODO I comment this out because I doubt it's ever been called.
+                # self.val_eval = create_dataset.EvalBrats(self.brats_images_test_val, self.cfg)
+                # self.test_eval = create_dataset.EvalBrats(self.brats_images_test_test, self.cfg)
 
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.cfg.batch_size, num_workers=self.cfg.num_workers, pin_memory=True,
@@ -103,11 +104,12 @@ class Brats(LightningDataModule):
         return DataLoader(self.val, batch_size=self.cfg.batch_size, num_workers=self.cfg.num_workers, pin_memory=True,
                           shuffle=False)
 
-    def val_eval_dataloader(self):
-        print(f'val_eval_dataloader was called in train')
-        return DataLoader(self.val_eval, batch_size=1, num_workers=self.cfg.num_workers, pin_memory=True, shuffle=False)
-
-    def test_eval_dataloader(self):
-        print(f'test_eval_dataloader was called in train')
-        return DataLoader(self.test_eval, batch_size=1, num_workers=self.cfg.num_workers, pin_memory=True,
-                          shuffle=False)
+    #TODO I comment this out because I doubt it's ever been called.
+    # def val_eval_dataloader(self):
+    #     print(f'val_eval_dataloader was called in train')
+    #     return DataLoader(self.val_eval, batch_size=1, num_workers=self.cfg.num_workers, pin_memory=True, shuffle=False)
+    #
+    # def test_eval_dataloader(self):
+    #     print(f'test_eval_dataloader was called in train')
+    #     return DataLoader(self.test_eval, batch_size=1, num_workers=self.cfg.num_workers, pin_memory=True,
+    #                       shuffle=False)
