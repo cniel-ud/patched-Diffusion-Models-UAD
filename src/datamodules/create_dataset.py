@@ -262,7 +262,7 @@ def TrainBrats(images_path: str, cfg, preload=True):
     # Assuming images and masks have the same naming convention and are in the same order
 
     # Get a list of image files
-    image_files = sorted([f for f in os.listdir(images_path) if f.endswith('.nii.gz')])[:20]
+    image_files = sorted([f for f in os.listdir(images_path) if f.endswith('.nii.gz') and f.find('seg') == -1])[:50]
     # Get a list of corresponding mask files
     mask_files = sorted([f.replace('t1', 'seg') for f in image_files])
     subjects = []
@@ -304,7 +304,7 @@ def TrainBrats(images_path: str, cfg, preload=True):
 def EvalBrats(images_path: str, cfg):
     subjects = []
     # Get a list of image files
-    image_files = sorted([f for f in os.listdir(images_path) if f.endswith('.nii.gz') and f.find('seg') == -1])[:20]
+    image_files = sorted([f for f in os.listdir(images_path) if f.endswith('.nii.gz') and f.find('seg') == -1])[:50]
 
     # Get a list of corresponding mask files
     mask_files = [f.replace('t1', 'seg') for f in image_files]
