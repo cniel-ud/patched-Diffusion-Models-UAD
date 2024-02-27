@@ -108,7 +108,7 @@ class Simplex_CLASS:
         y, x = [np.arange(0, end) for end in shape]
         amplitude = 1
         for _ in range(octaves):
-            noise += amplitude * self.noise2array(x / frequency, y / frequency)
+            noise += amplitude * self.noise2array(x / frequency, y / frequency).T
             frequency /= 2
             amplitude *= persistence
         return noise
