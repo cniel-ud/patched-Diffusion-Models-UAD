@@ -228,17 +228,21 @@ def sitk_reader(path):
     return vol, None
 
 
-def exclude_empty_slices(image, mask, slice_dim=-1):
+def exclude_empty_slices(image, mask=None, slice_dim=-1):
     slices = []
     mask_slices = []
     if slice_dim == -1:
         for i in range(image.shape[slice_dim]):
             if (image[..., i] > .0001).float().mean() >= .05:
                 slices.append(image[..., i])
-                mask_slices.append(mask[..., i])
+                if mask is not None:
+                    mask_slices.append(mask[..., i])
     else:
         raise NotImplementedError(f'slice_dim = {slice_dim} is not supported')
-    return torch.stack(slices).permute((1, 2, 0)), torch.stack(mask_slices).permute((1, 2, 0))
+    if mask is not None:
+        return torch.stack(slices).permute((1, 2, 0)), torch.stack(mask_slices).permute((1, 2, 0))
+    else:
+        return torch.stack(slices).permute((1, 2, 0))
 
 
 def exclude_abnomral_slices(image, mask, slice_dim=-1):
@@ -266,12 +270,15 @@ def TrainBrats(images_path: str, cfg, preload=True):
     for img_file, mask_file in zip(image_files, mask_files):
         # Read MRI images using tio
         sub = tio.ScalarImage(os.path.join(images_path, img_file), reader=sitk_reader)
+        image = sub.data[0].float()
         if cfg.train_contains_tumor:
             mask = tio.LabelMap(os.path.join(images_path, mask_file))
-            image, mask = exclude_abnomral_slices(sub.data[0].float(), mask.data[0].float())
+            image, mask = exclude_abnomral_slices(image, mask.data[0].float())
+            image, mask = exclude_empty_slices(image, mask)
+        else:
+            image = exclude_empty_slices(image)
 
         # Call the preprocessing method
-        image, mask = exclude_empty_slices(image, mask)
         brain_mask = (image > .001)[None, ...]
         image = image[None, ...]
         subject_dict = {'vol': tio.ScalarImage(tensor=image), 'age': 70, 'ID': img_file, 'label': counter,
