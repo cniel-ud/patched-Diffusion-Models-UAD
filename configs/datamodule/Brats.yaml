@@ -3,17 +3,17 @@ _target_: src.datamodules.Brats
 cfg:
   name: Brats
   train_contains_tumor: False
-  brats_images_train: /lustre/cniel/ds003097-derivative
-  brats_images_val: /lustre/cniel/ds003097-derivative/heldout
+  brats_images_train: /lustre/cniel/ds003097-derivative/registered
+  brats_images_val: /lustre/cniel/ds003097-derivative/heldout/registered
   brats_images_test_val: /lustre/cniel/BraTS2021_Training_Data/heldout/val
   brats_images_test_test: /lustre/cniel/BraTS2021_Training_Data/heldout
 
-  imageDim: 240x240x155
+  imageDim: [160,192,160]
   rescaleFactor: 2
   interRes: [8,8,5] #[HxWxD]
   cropMode: 'isotropic'
   spatialDims: ${model.cfg.spatialDims}
-  unisotropic_sampling: False
+  unisotropic_sampling: True
   sample_set: False
 
   preLoad: True
