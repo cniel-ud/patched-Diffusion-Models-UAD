@@ -3,7 +3,7 @@ _target_: src.datamodules.Brats
 cfg:
   name: Brats
   train_contains_tumor: True
-  brats_images_train: /lustre/cniel/data/BraTS2021_Training_Data/heldout
+  brats_images_train: /lustre/cniel/BraTS2021_Training_Data/heldout
   brats_images_test: /lustre/cniel/BraTS2021_Training_Data/heldout
   split_num: 1
 
