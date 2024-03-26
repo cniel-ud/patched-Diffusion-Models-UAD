@@ -2,11 +2,10 @@ _target_: src.datamodules.Brats
 
 cfg:
   name: Brats
-  train_contains_tumor: False
-  brats_images_train: /lustre/cniel/data/mixed_scanners/registered
-  brats_images_val: /lustre/cniel/data/mixed_scanners/registered/heldout
-  brats_images_test_val: /lustre/cniel/BraTS2021_Training_Data/heldout/val
-  brats_images_test_test: /lustre/cniel/BraTS2021_Training_Data/heldout
+  train_contains_tumor: True
+  brats_images_train: /lustre/cniel/data/BraTS2021_Training_Data/heldout
+  brats_images_test: /lustre/cniel/BraTS2021_Training_Data/heldout
+  split_num: 1
 
   imageDim: [160,192,160]
   rescaleFactor: 2
