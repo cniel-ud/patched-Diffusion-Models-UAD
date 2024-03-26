@@ -79,9 +79,6 @@ class Brats(LightningDataModule):
 
         self.cfg.permute = False  # no permutation for IXI
         self.brats_images_train = cfg.brats_images_train
-        self.brats_images_val = cfg.brats_images_val
-        self.brats_images_test_val = cfg.brats_images_test_val
-        self.brats_images_test_test = cfg.brats_images_test_test
         states = ['train', 'val', 'test']
 
     def setup(self, stage: Optional[str] = None):
