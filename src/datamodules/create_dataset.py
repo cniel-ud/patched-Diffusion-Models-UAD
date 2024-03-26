@@ -604,7 +604,7 @@ def TrainBrats(images_path: str, cfg, preload=True):
     split_info = load_splits(images_path + '/' + split_file)
     train_files = split_info['train']
     val_files = train_files[-int(.1*len(train_files)):]
-    train_files = train_files[:int(.1*len(train_files))]
+    train_files = train_files[:-int(.1*len(train_files))]
     # Get a list of corresponding mask files
     mask_train_files = sorted([f.replace('t1', 'seg') for f in train_files])
     mask_val_files = sorted([f.replace('t1', 'seg') for f in val_files])
