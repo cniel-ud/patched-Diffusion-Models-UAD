@@ -5,9 +5,13 @@ import torch
 import SimpleITK as sitk
 import torchio as tio
 import os
+import numpy as np
 
 sitk.ProcessObject.SetGlobalDefaultThreader("Platform")
 from multiprocessing import Manager
+from nilearn.image import crop_img, load_img
+from nilearn.image.image import _crop_img_to
+import nibabel as nib
 
 
 def Train(csv, cfg, preload=True):
@@ -196,10 +200,10 @@ def get_transform(cfg):  # only transforms that are applied once before preloadi
 
     if cfg.get('unisotropic_sampling', True):
         preprocess = tio.Compose([
-            tio.CropOrPad((h, w, d), padding_mode=0),
+            # tio.CropOrPad((h, w, d), padding_mode=0),
             tio.RescaleIntensity((0, 1), percentiles=(cfg.get('perc_low', 1), cfg.get('perc_high', 99)),
                                  masking_method='mask'),
-            tio.Resample(cfg.get('rescaleFactor', 3.0), image_interpolation='bspline', exclude=exclude_from_resampling),
+            # tio.Resample(cfg.get('rescaleFactor', 3.0), image_interpolation='bspline', exclude=exclude_from_resampling),
             # ,exclude=['vol_orig','mask_orig','seg_orig']), # we do not want to resize *_orig volumes
         ])
 
@@ -229,6 +233,7 @@ def sitk_reader(path):
     vol = sitk.GetArrayFromImage(image_nii).transpose(2, 1, 0)
     return vol, None
 
+
 from torch.utils.data import Dataset
 import torch
 import SimpleITK as sitk
@@ -243,6 +248,7 @@ def load_splits(split_file):
     with open(split_file, 'rb') as f:
         split_info = pickle.load(f)
     return split_info
+
 
 def Train(csv, cfg, preload=True):
     subjects = []
@@ -567,6 +573,7 @@ def EvalBrats(images_path: str, cfg):
     ds = tio.SubjectsDataset(subjects, transform=get_transform(cfg))
     return ds
 
+
 def exclude_empty_slices(image, mask=None, slice_dim=-1):
     slices = []
     mask_slices = []
@@ -582,6 +589,78 @@ def exclude_empty_slices(image, mask=None, slice_dim=-1):
         return torch.stack(slices).permute((1, 2, 0)), torch.stack(mask_slices).permute((1, 2, 0))
     else:
         return torch.stack(slices).permute((1, 2, 0))
+
+
+def crop(img, mask=None, rtol=1e-8, copy=True, pad=True, return_offset=False):
+    """Crops an image as much as possible.
+
+    Will crop `img`, removing as many zero entries as possible without
+    touching non-zero entries. Will leave one voxel of zero padding
+    around the obtained non-zero area in order to avoid sampling issues
+    later on.
+
+    Parameters
+    ----------
+    img : Niimg-like object
+        Image to be cropped (see :ref:`extracting_data` for a detailed
+        description of the valid input types).
+
+    rtol : :obj:`float`, optional
+        relative tolerance (with respect to maximal absolute value of the
+        image), under which values are considered negligeable and thus
+        croppable. Default=1e-8.
+
+    copy : :obj:`bool`, optional
+        Specifies whether cropped data is copied or not. Default=True.
+
+    pad : :obj:`bool`, optional
+        Toggles adding 1-voxel of 0s around the border. Default=True.
+
+    return_offset : :obj:`bool`, optional
+        Specifies whether to return a tuple of the removed padding.
+        Default=False.
+
+    Returns
+    -------
+    Niimg-like object or :obj:`tuple`
+        Cropped version of the input image and, if `return_offset=True`,
+        a tuple of tuples representing the number of voxels
+        removed (before, after) the cropped volumes, i.e.:
+        *[(x1_pre, x1_post), (x2_pre, x2_post), ..., (xN_pre, xN_post)]*
+
+    """
+    try:
+        data = load_img(img).get_fdata()
+    except Exception as e:
+        print(e)
+    infinity_norm = max(-data.min(), data.max())
+    passes_threshold = np.logical_or(
+        data < -rtol * infinity_norm, data > rtol * infinity_norm
+    )
+
+    if data.ndim == 4:
+        passes_threshold = np.any(passes_threshold, axis=-1)
+    coords = np.array(np.where(passes_threshold))
+
+    # Sets full range if no data are found along the axis
+    if coords.shape[1] == 0:
+        start, end = np.array([0, 0, 0]), np.array(data.shape)
+    else:
+        start = coords.min(axis=1)
+        end = coords.max(axis=1) + 1
+
+    # pad with one voxel to avoid resampling problems
+    if pad:
+        start = np.maximum(start - 1, 0)
+        end = np.minimum(end + 1, data.shape[:3])
+
+    slices = [slice(s, e) for s, e in zip(start, end)][:3]
+    cropped_im = _crop_img_to(img, slices, copy=copy)
+    if mask:
+        cropped_mask = _crop_img_to(mask, slices, copy=copy)
+        return cropped_im, cropped_mask
+    else:
+        return cropped_im
 
 
 def exclude_abnomral_slices(image, mask, slice_dim=-1):
@@ -601,31 +680,39 @@ def TrainBrats(images_path: str, cfg, preload=True):
     # Assuming images and masks have the same naming convention and are in the same order
 
     split_file = f'split_{cfg.split_num}.pkl'  # Update with the path to the split file you want to load
-    split_info = load_splits(images_path + '/' + split_file)
-    train_files = split_info['train']
-    val_files = train_files[-int(.1*len(train_files)):]
-    train_files = train_files[:-int(.1*len(train_files))]
+    if os.path.exists(split_file):
+        split_info = load_splits(images_path + '/' + split_file)
+        all_images = split_info['train']
+    else:
+        all_images = sorted([f.replace('t1', 'seg') for f in images_path])
+    val_files = all_images[-int(.1 * len(all_images)):]
+    train_files = all_images[:-int(.1 * len(all_images))]
     # Get a list of corresponding mask files
     mask_train_files = sorted([f.replace('t1', 'seg') for f in train_files])
     mask_val_files = sorted([f.replace('t1', 'seg') for f in val_files])
-    def get_files(image_files,mask_files):
+
+    def get_files(image_files, mask_files):
         subjects = []
         counter = 0
         for img_file, mask_file in zip(image_files, mask_files):
-            # Read MRI images using tio
-            sub = tio.ScalarImage(os.path.join(images_path, img_file), reader=sitk_reader)
-            image = sub.data[0].float()
+            sub = nib.squeeze_image(nib.load(os.path.join(images_path, img_file)))
             if cfg.train_contains_tumor:
-                mask = tio.LabelMap(os.path.join(images_path, mask_file))
-                image, mask = exclude_abnomral_slices(image, mask.data[0].float())
+                mask = nib.squeeze_image(nib.load(os.path.join(images_path, mask_file)))
+                image, mask = crop(sub, mask)
+                mask = mask.get_fdata()
+                image = sub.get_fdata()
+                image, mask = exclude_abnomral_slices(image, mask)
                 image, mask = exclude_empty_slices(image, mask)
             else:
+                image = crop(sub)
                 image = exclude_empty_slices(image)
 
             # Call the preprocessing method
             brain_mask = (image > .001)[None, ...]
             image = image[None, ...]
-            subject_dict = {'vol': tio.ScalarImage(tensor=image), 'age': 70, 'ID': img_file, 'label': counter,
+            image = tio.ScalarImage(tensor=image)
+            image = tio.Resize((240, 240, image.shape[-1]))(image)
+            subject_dict = {'vol': image, 'age': 70, 'ID': img_file, 'label': counter,
                             'Dataset': 'dummy', 'stage': 'stage', 'path': img_file,
                             'mask': tio.LabelMap(tensor=brain_mask)}
             subject = tio.Subject(subject_dict)
@@ -643,12 +730,14 @@ def TrainBrats(images_path: str, cfg, preload=True):
             seq_slices = cfg.get('sequentialslices', None)
             ds = vol2slice(ds, cfg, slice=slice_ind, seq_slices=seq_slices)
         return ds
-    train_set = get_files(train_files,mask_train_files)
-    val_set = get_files(val_files,mask_val_files)
-    return train_set,val_set
+
+    train_set = get_files(train_files, mask_train_files)
+    val_set = get_files(val_files, mask_val_files)
+    return train_set, val_set
+
 
 def EvalBrats(images_path: str, cfg):
-    split_file = f'split_{cfg.split_num}.pkl'  # Update with the path to the split file you want to load
+    split_file = f'split_benchmark_{cfg.split_num}.pkl'  # Update with the path to the split file you want to load
     split_info = load_splits(images_path + '/' + split_file)
     test_files = split_info['test']
     val_files = split_info['val']
@@ -656,15 +745,17 @@ def EvalBrats(images_path: str, cfg):
     mask_test_files = sorted([f.replace('t1', 'seg') for f in test_files])
     mask_val_files = sorted([f.replace('t1', 'seg') for f in val_files])
 
-    def get_files(image_files,mask_files):
+    def get_files(image_files, mask_files):
         counter = 0
         subjects = []
         for img_file, mask_file in zip(image_files, mask_files):
             # Read MRI images using tio
-            sub = tio.ScalarImage(os.path.join(images_path, img_file), reader=sitk_reader)
-            mask = tio.LabelMap(os.path.join(images_path, mask_file))
-
-            image, mask = exclude_empty_slices(sub.data[0].float(), mask.data[0].float())
+            sub = nib.squeeze_image(nib.load(os.path.join(images_path, img_file)))
+            mask = nib.squeeze_image(nib.load(os.path.join(images_path, mask_file)))
+            image, mask = crop(sub, mask)
+            image, mask = sub.get_fdata(), mask.get_fdata()
+            image, mask = crop(image, mask)
+            image, mask = exclude_empty_slices(image, mask)
             brain_mask = (image > .001)[None, ...]
             image = image[None, ...]
             mask = mask[None, ...]
@@ -673,12 +764,14 @@ def EvalBrats(images_path: str, cfg):
                             'Dataset': 'dataset', 'stage': 'dummy', 'path': img_file,
                             'mask': tio.LabelMap(tensor=brain_mask),
                             'mask_orig': tio.LabelMap(tensor=brain_mask),
-                            'seg_available': True, 'seg': tio.LabelMap(tensor=mask), 'seg_orig': tio.LabelMap(tensor=mask)}
+                            'seg_available': True, 'seg': tio.LabelMap(tensor=mask),
+                            'seg_orig': tio.LabelMap(tensor=mask)}
             subject = tio.Subject(subject_dict)
             subjects.append(subject)
             counter += 1
         ds = tio.SubjectsDataset(subjects, transform=get_transform(cfg))
         return ds
-    test_set = get_files(test_files,mask_test_files)
-    val_set = get_files(val_files,mask_val_files)
-    return test_set,val_set
+
+    test_set = get_files(test_files, mask_test_files)
+    val_set = get_files(val_files, mask_val_files)
+    return test_set, val_set
