@@ -252,7 +252,7 @@ def exclude_empty_slices(image, mask=None, slice_dim=-1):
         raise NotImplementedError(f'slice_dim = {slice_dim} is not supported')
     if mask is not None:
         return (torch.tensor(slices).permute((1, 2, 0)) if len(slices) > 0 else None,
-                torch.tensor(mask_slices).permute((1, 2, 0))) if len(mask_slices) > 0 else None
+                torch.tensor(mask_slices).permute((1, 2, 0)) if len(mask_slices) > 0 else None)
     else:
         return torch.tensor(slices).permute((1, 2, 0)) if len(slices) > 0 else None
 
