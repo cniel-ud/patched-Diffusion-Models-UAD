@@ -419,11 +419,10 @@ def EvalBrats(images_path: str, cfg):
             mask = nib.squeeze_image(nib.load(os.path.join(images_path, mask_file)))
             image, mask = crop(sub, mask)
             image, mask = sub.get_fdata(), mask.get_fdata()
-            image, mask = crop(image, mask)
             image, mask = exclude_empty_slices(image, mask)
-            brain_mask = (image > .001)[None, ...]
             image = image[None, ...]
             mask = mask[None, ...]
+            brain_mask = (image > .001)
             subject_dict = {'vol': tio.ScalarImage(tensor=image), 'vol_orig': tio.ScalarImage(tensor=image),
                             'age': 70, 'ID': img_file, 'label': counter,
                             'Dataset': 'dataset', 'stage': 'dummy', 'path': img_file,
