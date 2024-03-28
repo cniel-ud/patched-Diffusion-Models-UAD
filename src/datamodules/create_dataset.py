@@ -432,7 +432,7 @@ def EvalBrats(images_path: str, cfg):
             image = tio.ScalarImage(tensor=image)
             image = tio.Resize((240, 240, image.shape[-1]))(image)
             image = tio.CropOrPad((240, 240, image.shape[-1]))(image)
-            brain_mask = (image > .001)
+            brain_mask = (image.data > .001)
             subject_dict = {'vol': image, 'vol_orig': image,
                             'age': 70, 'ID': img_file, 'label': counter,
                             'Dataset': 'dataset', 'stage': 'dummy', 'path': img_file,
