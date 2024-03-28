@@ -242,7 +242,7 @@ def exclude_empty_slices(image, mask=None, slice_dim=-1):
     mask_slices = []
     if slice_dim == -1:
         for i in range(image.shape[slice_dim]):
-            if (image[..., i] > .0001).float().mean() >= .05:
+            if (image[..., i] > .0001).mean() >= .05:
                 slices.append(image[..., i])
                 if mask is not None:
                     mask_slices.append(mask[..., i])
@@ -331,12 +331,12 @@ def exclude_abnomral_slices(image, mask, slice_dim=-1):
     mask_slices = []
     if slice_dim == -1:
         for i in range(image.shape[slice_dim]):
-            if (mask[..., i] > 0).float().mean() < .001:
+            if (mask[..., i] > 0).mean() < .001:
                 no_abnormal_image.append(image[..., i])
                 mask_slices.append(mask[..., i])
     else:
         raise NotImplementedError(f'slice_dim = {slice_dim} is not supported')
-    return torch.stack(no_abnormal_image).permute((1, 2, 0)), torch.stack(mask_slices).permute((1, 2, 0))
+    return torch.tensor(no_abnormal_image).permute((1, 2, 0)), torch.tensor(mask_slices).permute((1, 2, 0))
 
 
 def TrainBrats(images_path: str, cfg, preload=True):
