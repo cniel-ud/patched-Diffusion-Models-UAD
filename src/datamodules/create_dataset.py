@@ -384,7 +384,7 @@ def TrainBrats(images_path: str, cfg, preload=True):
             subject_dict = {'vol': image, 'age': 70, 'ID': img_file, 'label': counter,
                             'Dataset': 'dummy', 'stage': 'stage', 'path': img_file,
                             'mask': tio.LabelMap(tensor=brain_mask)}
-            subject = tio.Subject(subject_dict)
+            subject = tio.Subject(subject_dict)  
             subjects.append(subject)
             counter += 1
         if preload:
@@ -427,13 +427,19 @@ def EvalBrats(images_path: str, cfg):
             image = image[None, ...]
             mask = mask[None, ...]
             brain_mask = (image > .001)
-            subject_dict = {'vol': tio.ScalarImage(tensor=image), 'vol_orig': tio.ScalarImage(tensor=image),
+            label = tio.LabelMap(tensor=mask)
+            label = tio.Resize((240, 240, label.shape[-1]))(label)
+            label = tio.CropOrPad((240, 240, label.shape[-1]))(label)
+            image = tio.ScalarImage(tensor=image)
+            image = tio.Resize((240, 240, image.shape[-1]))(image)
+            image = tio.CropOrPad((240, 240, image.shape[-1]))(image)
+            subject_dict = {'vol': image, 'vol_orig': image,
                             'age': 70, 'ID': img_file, 'label': counter,
                             'Dataset': 'dataset', 'stage': 'dummy', 'path': img_file,
                             'mask': tio.LabelMap(tensor=brain_mask),
                             'mask_orig': tio.LabelMap(tensor=brain_mask),
-                            'seg_available': True, 'seg': tio.LabelMap(tensor=mask),
-                            'seg_orig': tio.LabelMap(tensor=mask)}
+                            'seg_available': True, 'seg': label,
+                            'seg_orig': label}
             subject = tio.Subject(subject_dict)
             subjects.append(subject)
             counter += 1
