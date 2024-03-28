@@ -365,7 +365,7 @@ def TrainBrats(images_path: str, cfg, preload=True):
                 mask = mask.get_fdata()
                 image = image.get_fdata()
                 image, mask = exclude_abnomral_slices(image, mask)
-                image, mask = exclude_empty_slices(image, mask)
+                image, mask = exclude_empty_slices(image.numpy(), mask.numpy())
             else:
                 image = crop(sub)
                 image = image.get_fdata()
