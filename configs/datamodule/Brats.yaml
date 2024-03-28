@@ -3,7 +3,7 @@ _target_: src.datamodules.Brats
 cfg:
   name: Brats
   train_contains_tumor: False
-  brats_images_train: /lustre/cniel/ds003097-derivative
+  brats_images_train: /lustre/cniel/BraTS2021_Training_Data/heldout
   brats_images_test: /lustre/cniel/BraTS2021_Training_Data/heldout
   split_num: 1
 
