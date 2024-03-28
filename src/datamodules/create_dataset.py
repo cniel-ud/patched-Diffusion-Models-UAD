@@ -372,10 +372,10 @@ def TrainBrats(images_path: str, cfg, preload=True):
                 image = exclude_empty_slices(image)
 
             # Call the preprocessing method
-            brain_mask = (image > .001)[None, ...]
             image = image[None, ...]
             image = tio.ScalarImage(tensor=image)
             image = tio.Resize((240, 240, image.shape[-1]))(image)
+            brain_mask = (image.data > .001)
             subject_dict = {'vol': image, 'age': 70, 'ID': img_file, 'label': counter,
                             'Dataset': 'dummy', 'stage': 'stage', 'path': img_file,
                             'mask': tio.LabelMap(tensor=brain_mask)}
