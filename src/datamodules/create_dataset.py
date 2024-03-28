@@ -216,7 +216,7 @@ def get_transform(cfg):  # only transforms that are applied once before preloadi
         preprocess = tio.Compose([
             tio.RescaleIntensity((0, 1), percentiles=(cfg.get('perc_low', 1), cfg.get('perc_high', 99)),
                                  masking_method='mask'),
-            tio.Resample(cfg.get('rescaleFactor', 3.0), image_interpolation='bspline', exclude=exclude_from_resampling),
+            # tio.Resample(cfg.get('rescaleFactor', 3.0), image_interpolation='bspline', exclude=exclude_from_resampling),
             # ,exclude=['vol_orig','mask_orig','seg_orig']), # we do not want to resize *_orig volumes
         ])
 
@@ -426,13 +426,13 @@ def EvalBrats(images_path: str, cfg):
             image, mask = exclude_empty_slices(image, mask)
             image = image[None, ...]
             mask = mask[None, ...]
-            brain_mask = (image > .001)
             label = tio.LabelMap(tensor=mask)
             label = tio.Resize((240, 240, label.shape[-1]))(label)
             label = tio.CropOrPad((240, 240, label.shape[-1]))(label)
             image = tio.ScalarImage(tensor=image)
             image = tio.Resize((240, 240, image.shape[-1]))(image)
             image = tio.CropOrPad((240, 240, image.shape[-1]))(image)
+            brain_mask = (image > .001)
             subject_dict = {'vol': image, 'vol_orig': image,
                             'age': 70, 'ID': img_file, 'label': counter,
                             'Dataset': 'dataset', 'stage': 'dummy', 'path': img_file,
