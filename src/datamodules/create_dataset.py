@@ -363,11 +363,12 @@ def TrainBrats(images_path: str, cfg, preload=True):
                 mask = nib.squeeze_image(nib.load(os.path.join(images_path, mask_file)))
                 image, mask = crop(sub, mask)
                 mask = mask.get_fdata()
-                image = sub.get_fdata()
+                image = image.get_fdata()
                 image, mask = exclude_abnomral_slices(image, mask)
                 image, mask = exclude_empty_slices(image, mask)
             else:
                 image = crop(sub)
+                image = image.get_fdata()
                 image = exclude_empty_slices(image)
 
             # Call the preprocessing method
