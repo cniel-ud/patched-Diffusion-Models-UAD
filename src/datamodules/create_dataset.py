@@ -11,6 +11,8 @@ from nilearn.image import crop_img, load_img
 from nilearn.image.image import _crop_img_to
 import nibabel as nib
 import numpy as np
+
+
 def load_splits(split_file):
     with open(split_file, 'rb') as f:
         split_info = pickle.load(f)
@@ -249,9 +251,10 @@ def exclude_empty_slices(image, mask=None, slice_dim=-1):
     else:
         raise NotImplementedError(f'slice_dim = {slice_dim} is not supported')
     if mask is not None:
-        return torch.tensor(slices).permute((1, 2, 0)), torch.tensor(mask_slices).permute((1, 2, 0))
+        return (torch.tensor(slices).permute((1, 2, 0)) if len(slices) > 0 else None,
+                torch.tensor(mask_slices).permute((1, 2, 0))) if len(mask_slices) > 0 else None
     else:
-        return torch.tensor(slices).permute((1, 2, 0))
+        return torch.tensor(slices).permute((1, 2, 0)) if len(slices) > 0 else None
 
 
 def crop(img, mask=None, rtol=1e-8, copy=True, pad=True, return_offset=False):
@@ -370,7 +373,8 @@ def TrainBrats(images_path: str, cfg, preload=True):
                 image = crop(sub)
                 image = image.get_fdata()
                 image = exclude_empty_slices(image)
-
+            if image is None:
+                continue
             # Call the preprocessing method
             image = image[None, ...]
             image = tio.ScalarImage(tensor=image)
