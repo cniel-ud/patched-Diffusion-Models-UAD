@@ -422,7 +422,7 @@ def EvalBrats(images_path: str, cfg):
             sub = nib.squeeze_image(nib.load(os.path.join(images_path, img_file)))
             mask = nib.squeeze_image(nib.load(os.path.join(images_path, mask_file)))
             image, mask = crop(sub, mask)
-            image, mask = sub.get_fdata(), mask.get_fdata()
+            image, mask = image.get_fdata(), mask.get_fdata()
             image, mask = exclude_empty_slices(image, mask)
             image = image[None, ...]
             mask = mask[None, ...]
