@@ -137,6 +137,20 @@ class DDPM_2D(LightningModule):
         if not hasattr(self, 'threshold'):
             self.threshold = {}
 
+    def split_tensors(self, tensors, split_sizes):
+        """
+        Splits the given tensors into chunks along the first dimension.
+
+        Parameters:
+        - tensors: A list of tensors to split.
+        - split_sizes: A list of integers specifying the number of elements in each split.
+
+        Returns:
+        - A list of tuples, where each tuple contains chunks of the original tensors.
+        """
+        split_tensors = [torch.split(tensor, split_sizes, dim=0) for tensor in tensors]
+        return list(zip(*split_tensors))
+
     def test_step(self, batch: Any, batch_idx: int):
         self.dataset = batch['Dataset']
         input = batch['vol'][tio.DATA]
@@ -189,11 +203,9 @@ class DDPM_2D(LightningModule):
             reco_combined = []
             print(input.shape, box.shape, noise.shape)
             # Split input tensor into halves and process each half
-            for input_half, box_half, noise_half in [
-                (input[:input.size(0) // 2], box[:box.size(0) // 2], noise[:noise.size(0) // 2]),
-                (input[input.size(0) // 2:], box[box.size(0) // 2:], noise[noise.size(0) // 2:])]:
-                # Pass the half through the diffusion function
-                result = self.diffusion(input_half, t=self.test_timesteps - 1, box=box_half, noise=noise_half)
+            for input_chunk, box_chunk, noise_chunk in self.split_tensors([input, box, noise], 32):
+                # Pass the chunk through the diffusion function
+                result = self.diffusion(input_chunk, t=self.test_timesteps - 1, box=box_chunk, noise=noise_chunk)
                 # Append results to the corresponding lists
                 loss_diff_combined.append(result[0])
                 reco_combined.append(result[1])
