@@ -185,8 +185,24 @@ class DDPM_2D(LightningModule):
 
         for k in range(bbox.shape[1]):
             box = bbox[:,k]
-            # reconstruct
-            loss_diff, reco = self.diffusion(input,t=self.test_timesteps-1, box=box,noise=noise)
+
+            loss_diff_combined = []
+            reco_combined = []
+
+            # Split input tensor into halves and process each half
+            for input_half in [input[:input.size(0) // 2], input[input.size(0) // 2:]]:
+                # Pass the half through the diffusion function
+                result = self.diffusion(input_half, t=self.test_timesteps - 1, box=box, noise=noise)
+                # Append results to the corresponding lists
+                loss_diff_combined.append(result[0])
+                reco_combined.append(result[1])
+
+            # Concatenate results obtained from each half
+            loss_diff = torch.cat(loss_diff_combined)
+            reco = torch.cat(reco_combined)
+
+            # # reconstruct
+            # loss_diff, reco = self.diffusion(input,t=self.test_timesteps-1, box=box,noise=noise)
 
             if reco.shape[1] == 2:
                 reco = reco[:,0:1,:,:]
