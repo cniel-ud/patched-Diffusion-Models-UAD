@@ -211,7 +211,7 @@ class DDPM_2D(LightningModule):
                 reco_combined.append(result[1])
 
             # Concatenate results obtained from each half
-            loss_diff = torch.cat(loss_diff_combined)
+            loss_diff = torch.stack(loss_diff_combined).mean()
             reco = torch.cat(reco_combined)
 
             # # reconstruct
