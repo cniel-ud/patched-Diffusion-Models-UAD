@@ -203,7 +203,7 @@ class DDPM_2D(LightningModule):
             reco_combined = []
             print(input.shape, box.shape, noise.shape)
             # Split input tensor into halves and process each half
-            for input_chunk, box_chunk, noise_chunk in self.split_tensors([input, box, noise], 64):
+            for input_chunk, box_chunk, noise_chunk in self.split_tensors([input, box, noise], 32):
                 # Pass the chunk through the diffusion function
                 result = self.diffusion(input_chunk, t=self.test_timesteps - 1, box=box_chunk, noise=noise_chunk)
                 # Append results to the corresponding lists

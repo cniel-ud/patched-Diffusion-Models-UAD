@@ -384,7 +384,7 @@ def TrainBrats(images_path: str, cfg, preload=True):
             subject_dict = {'vol': image, 'age': 70, 'ID': img_file, 'label': counter,
                             'Dataset': 'dummy', 'stage': 'stage', 'path': img_file,
                             'mask': tio.LabelMap(tensor=brain_mask)}
-            subject = tio.Subject(subject_dict)  
+            subject = tio.Subject(subject_dict)
             subjects.append(subject)
             counter += 1
         if preload:
@@ -401,7 +401,9 @@ def TrainBrats(images_path: str, cfg, preload=True):
         return ds
 
     train_set = get_files(train_files, mask_train_files)
+    print(f'Number of subjects in the training set is {len(train_set)} ')
     val_set = get_files(val_files, mask_val_files)
+    print(f'Number of subjects in the training set is {len(val_set)} ')
     return train_set, val_set
 
 
